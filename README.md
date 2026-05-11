@@ -9,7 +9,7 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 | Lucas Fluxá       | @LucasFluxa    | lfluxa@usm.cl            | 202630017-k  |
 | Bruno Olguín      | @Bruno-Olguin  | bolguinc@usm.cl          | 202630028-5  |
 | Domingo Vargas    | @Domingo-07    | jvargascar@usm.cl        | 202630026-9  |
-| Daniel Guerra     | @dannyto2      | dguerrap@usm.cl              | 202530020-6  |
+| Daniel Guerra     | @dannyto2      | dguerrap@usm.cl          | 202530020-6  |
 
 ---
 
@@ -25,7 +25,7 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
   - Desarrollar un sistema de monitoreo inteligente de acuarios que permita detectar condiciones adversas del agua y comportamiento anómalo de los peces en tiempo real.
 
 - **Objetivos específicos:**
-  - Medir temperatura, pH y turbidez del agua mediante sensores conectados al Arduino UNO Q.
+  - Medir temperatura, pH mediante sensores conectados al Arduino UNO Q.
   - Implementar tracking de movimiento de peces mediante cámara USB y visión por computadora corriendo localmente en el UNO Q.
   - Desarrollar un dashboard web hosteado en el propio Arduino UNO Q accesible desde cualquier dispositivo en la misma red.
   - Generar alertas automáticas cuando algún parámetro salga del rango ideal para las especies registradas.
@@ -107,4 +107,4 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 
 > - El sensor de pH requiere calibración inicial con soluciones buffer pH 4.0 y pH 7.0, y recalibración.
 > - La cámara USB se conecta al puerto USB-C del UNO Q mediante un USB-C HUB
-> - Para la demo final se presentará un acuario real con peces.
+
