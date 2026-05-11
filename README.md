@@ -36,7 +36,7 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 ## 🧩 Alcance del proyecto
 
 **Dentro del alcance:**
-- Monitoreo en tiempo real de temperatura, pH y turbidez
+- Monitoreo en tiempo real de temperatura y pH
 - Tracking de movimiento de peces con detección de comportamiento anómalo
 - Dashboard web local con historial de datos
 - Base de datos de especies de peces con parámetros ideales y compatibilidad
