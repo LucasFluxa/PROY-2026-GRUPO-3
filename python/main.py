@@ -1,118 +1,216 @@
-import serial
+	#!/usr/bin/env python3
+"""
+AquaSense - Python side (QRB2210 / Debian Linux)
+Hardware: Arduino UNO Q
+Comunicacion: Bridge RPC oficial (arduino.app_bricks.bridge)
+Web server:   WebUI brick oficial (FastAPI + uvicorn + Socket.IO)
+Puerto:       7000
+"""
+
+import json
 import threading
 import time
-import cv2
-from flask import Flask, render_template, Response, jsonify
-from datetime import datetime
-import collections
+from pathlib import Path
 
-app = Flask(__name__)
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
-# ── Configuración ─────────────────────────────────────────────
-SERIAL_PORT = "/dev/ttyACM0"
-BAUD_RATE = 9600
-CAMERA_INDEX = 0
+from arduino.app_utils import App
+from arduino.app_bricks.web_ui import WebUI
+from arduino.app_bricks.bridge import Bridge
 
-# ── Estado global ─────────────────────────────────────────────
-estado = {
-    "temperatura": None,
-    "alerta_temp": False,
-    "movimiento": False,
-    "historial": collections.deque(maxlen=50)
+# ── Rutas de archivos ─────────────────────────────────────────────────────────
+ASSETS_DIR   = Path(__file__).parent.parent / "assets"
+FISH_DB_PATH = ASSETS_DIR / "fish_database.json"
+
+# ── Cargar base de datos de peces ─────────────────────────────────────────────
+try:
+    with open(FISH_DB_PATH, encoding="utf-8") as fh:
+        FISH_DB = json.load(fh)
+    print(f"[AquaSense] Base de datos cargada: {len(FISH_DB)} especies")
+except FileNotFoundError:
+    print(f"[AquaSense] ADVERTENCIA: No se encontro {FISH_DB_PATH}")
+    FISH_DB = []
+
+# ── Estado compartido (protegido con lock para thread safety) ─────────────────
+_lock = threading.Lock()
+_latest = {
+    "temperature": None,   # float °C, None si no hay datos aun
+    "ph":          None,   # float 0-14, None si no hay datos aun
+    "timestamp":   None,   # Unix timestamp de la ultima lectura
+    "status":      "initializing",  # "ok" | "sensor_error" | "initializing"
 }
 
-TEMP_MIN = 24.0
-TEMP_MAX = 28.0
+# ── WebUI: inicializar antes de los handlers para poder llamar send_message ───
+ui = WebUI(assets_dir_path=str(ASSETS_DIR))
 
-# ── Lector de temperatura (con reconexión automática) ─────────
-def leer_temperatura():
+# ── Bridge RPC: funciones que el sketch STM32 puede llamar ───────────────────
+
+def python_ready_ack() -> bool:
+    """
+    Handshake de arranque.
+    El sketch llama esta funcion desde setup() para confirmar que Python esta listo.
+    Evita que se pierdan mensajes Bridge durante el boot.
+    """
+    print("[Bridge] Handshake recibido: Python esta listo")
+    return True
+
+
+def sensor_update(temperature: float, ph: float):
+    """
+    Recibe temperatura y pH desde el sketch cada 2 segundos via Bridge.notify().
+    Actualiza el estado global y hace push en tiempo real a los clientes WebSocket.
+
+    Args:
+        temperature: temperatura en grados Celsius (-999.0 = error de sensor)
+        ph:          valor de pH en escala 0-14
+    """
+    with _lock:
+        _latest["temperature"] = round(temperature, 2) if temperature != -999.0 else None
+        _latest["ph"]          = round(ph, 2)
+        _latest["timestamp"]   = time.time()
+        _latest["status"]      = "ok" if temperature != -999.0 else "sensor_error"
+        snapshot = dict(_latest)
+
+    print(f"[Bridge] sensor_update → temp={snapshot['temperature']}°C  pH={snapshot['ph']}")
+
+    # Push inmediato a todos los clientes conectados via Socket.IO
+    # El dashboard recibe esto sin necesitar hacer polling
+    ui.send_message("sensor_update", snapshot)
+
+
+# Registrar funciones para que el sketch pueda llamarlas
+Bridge.provide("python_ready_ack", python_ready_ack)
+Bridge.provide("sensor_update",    sensor_update)
+
+# ── Fallback: polling Bridge cada 5 s ─────────────────────────────────────────
+# Por si algun Bridge.notify() se pierde, consultamos directamente al sketch
+def _poll_bridge():
     while True:
+        time.sleep(5)
         try:
-            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2)
-            print(f"[Serial] Conectado en {SERIAL_PORT}")
-            while True:
-                linea = ser.readline().decode("utf-8").strip()
-                if linea:
-                    try:
-                        temp = float(linea)
-                        if temp == -127.0:          # DS18B20 desconectado
-                            continue
-                        estado["temperatura"] = temp
-                        estado["alerta_temp"] = temp < TEMP_MIN or temp > TEMP_MAX
-                        estado["historial"].append({
-                            "hora": datetime.now().strftime("%H:%M:%S"),
-                            "temp": temp
-                        })
-                    except ValueError:
-                        pass
-        except Exception as e:
-            print(f"[Serial] Error: {e} — reintentando en 5s")
-            time.sleep(5)
+            temp = 0.0
+            ph   = 0.0
+            Bridge.call("get_temperature").result(temp)
+            Bridge.call("get_ph").result(ph)
 
-# ── Cámara con detección de movimiento ────────────────────────
-def generar_video():
-    camara = cv2.VideoCapture(CAMERA_INDEX)   # inicialización local (fix race condition)
-    
-    if not camara.isOpened():
-        print(f"[Cámara] No se pudo abrir el índice {CAMERA_INDEX}")
-        return
+            with _lock:
+                age = time.time() - (_latest["timestamp"] or 0)
+                # Solo actualizar si el notify lleva mas de 4 s sin llegar
+                if age > 4:
+                    _latest["temperature"] = round(temp, 2) if temp != -999.0 else None
+                    _latest["ph"]          = round(ph, 2)
+                    _latest["timestamp"]   = time.time()
+                    _latest["status"]      = "ok" if temp != -999.0 else "sensor_error"
+                    print(f"[Poll] Fallback update → temp={_latest['temperature']}°C  pH={_latest['ph']}")
 
-    frame_anterior = None                      # variable local (fix thread-safety)
+        except Exception as exc:
+            print(f"[Poll] Error al consultar Bridge: {exc}")
 
+
+threading.Thread(target=_poll_bridge, daemon=True, name="bridge-poll").start()
+
+# ── API endpoints ─────────────────────────────────────────────────────────────
+
+def api_sensors():
+    """
+    GET /api/sensors
+    Devuelve la ultima lectura de temperatura y pH.
+    """
+    with _lock:
+        return dict(_latest)
+
+
+def api_fish():
+    """
+    GET /api/fish
+    Devuelve la base de datos completa de especies de acuario.
+    """
+    return FISH_DB
+
+
+async def api_compatibility(request: Request):
+    """
+    GET /api/compatibility?ids=1,5,12
+    Verifica si los peces indicados son compatibles con los parametros actuales del agua.
+    Devuelve lista de issues por especie (temperatura fuera de rango, pH fuera de rango).
+    """
+    ids_param = request.query_params.get("ids", "")
+
+    # Parsear IDs
     try:
-        while True:
-            ok, frame = camara.read()
-            if not ok:
-                print("[Cámara] No se pudo leer frame")
-                break
+        requested_ids = {int(x) for x in ids_param.split(",") if x.strip()}
+    except ValueError:
+        return JSONResponse(
+            {"error": "Parametro 'ids' invalido. Usa numeros separados por coma, ej: ?ids=1,5,12"},
+            status_code=400
+        )
 
-            gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gris = cv2.GaussianBlur(gris, (21, 21), 0)
+    if not requested_ids:
+        return JSONResponse({"error": "No se indicaron IDs de peces"}, status_code=400)
 
-            if frame_anterior is None:
-                frame_anterior = gris
-                continue
+    # Obtener lecturas actuales
+    with _lock:
+        temp = _latest["temperature"]
+        ph   = _latest["ph"]
 
-            diff = cv2.absdiff(frame_anterior, gris)
-            thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-            pixeles_movimiento = cv2.countNonZero(thresh)
+    if temp is None or ph is None:
+        return JSONResponse(
+            {"error": "Datos de sensor no disponibles aun. Espera a que el sketch arranque."},
+            status_code=503
+        )
 
-            estado["movimiento"] = pixeles_movimiento > 500
+    # Verificar compatibilidad para cada pez solicitado
+    results = []
+    for fish in FISH_DB:
+        if fish["id"] not in requested_ids:
+            continue
 
-            color = (0, 0, 255) if estado["movimiento"] else (0, 255, 0)
-            texto = "Movimiento detectado" if estado["movimiento"] else "Sin movimiento"
-            cv2.putText(frame, texto, (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+        issues = []
 
-            frame_anterior = gris
+        # Verificar temperatura
+        if not (fish["temp_min"] <= temp <= fish["temp_max"]):
+            issues.append({
+                "type":      "temperature",
+                "direction": "low" if temp < fish["temp_min"] else "high",
+                "current":   temp,
+                "ideal_min": fish["temp_min"],
+                "ideal_max": fish["temp_max"],
+            })
 
-            _, buffer = cv2.imencode(".jpg", frame)
-            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" +   # fix \\r\\n → \r\n
-                   buffer.tobytes() + b"\r\n")
-    finally:
-        camara.release()   # libera la cámara si el generador termina
+        # Verificar pH
+        if not (fish["ph_min"] <= ph <= fish["ph_max"]):
+            issues.append({
+                "type":      "ph",
+                "direction": "low" if ph < fish["ph_min"] else "high",
+                "current":   ph,
+                "ideal_min": fish["ph_min"],
+                "ideal_max": fish["ph_max"],
+            })
 
-# ── Rutas Flask ───────────────────────────────────────────────
-@app.route("/")
-def index():
-    return render_template("index.html")
+        results.append({
+            "id":         fish["id"],
+            "name":       fish["common_name"],
+            "scientific": fish["scientific_name"],
+            "compatible": len(issues) == 0,
+            "issues":     issues,
+        })
 
-@app.route("/video")
-def video():
-    return Response(generar_video(),
-                    mimetype="multipart/x-mixed-replace; boundary=frame")
+    return {
+        "temperature": temp,
+        "ph":          ph,
+        "fish":        results,
+    }
 
-@app.route("/datos")
-def datos():
-    return jsonify({
-        "temperatura": estado["temperatura"],
-        "alerta_temp": estado["alerta_temp"],
-        "movimiento": estado["movimiento"],
-        "historial": list(estado["historial"])
-    })
 
-# ── Inicio ────────────────────────────────────────────────────
-if __name__ == "__main__":
-    hilo_temp = threading.Thread(target=leer_temperatura, daemon=True)
-    hilo_temp.start()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+# Registrar endpoints en el brick WebUI (FastAPI internamente)
+ui.expose_api("GET", "/api/sensors",       api_sensors)
+ui.expose_api("GET", "/api/fish",          api_fish)
+ui.expose_api("GET", "/api/compatibility", api_compatibility)
+
+# ── Arranque ──────────────────────────────────────────────────────────────────
+print(f"[AquaSense] Dashboard disponible en {ui.url}")
+print("[AquaSense] Esperando datos del sketch via Bridge...")
+
+# App.run() inicia el brick WebUI + mantiene el Bridge vivo
+App.run()
