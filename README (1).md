@@ -19,7 +19,7 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 
 ## 📝 Descripción breve del proyecto
 
-**AquaSense** es un sistema inteligente de monitoreo de acuarios que combina sensores físicos, visión por computadora y una interfaz web local. El sistema mide en tiempo real la temperatura y pH del agua, y utiliza una cámara para trackear el comportamiento de los peces, detectando signos de estrés o anomalías. Todo el procesamiento ocurre directamente en el Arduino UNO Q, sin depender de servidores externos.
+**AquaSense** es un sistema inteligente de monitoreo de acuarios que combina sensores físicos y una interfaz web local. El sistema mide en tiempo real la temperatura y pH del agua, y utiliza una cámara USB para visualización en vivo del acuario. Todo el procesamiento ocurre directamente en el Arduino UNO Q, sin depender de servidores externos.
 
 El dashboard web incluye una base de datos de especies de peces con parámetros ideales de temperatura y pH, compatibilidad entre especies, y un sistema de alertas automáticas cuando los parámetros del agua salen del rango óptimo para las especies registradas.
 
@@ -32,7 +32,7 @@ El dashboard web incluye una base de datos de especies de peces con parámetros 
 
 - **Objetivos específicos:**
   - Medir temperatura y pH mediante sensores conectados al Arduino UNO Q.
-  - Implementar tracking de movimiento de peces mediante cámara USB y visión por computadora corriendo localmente en el UNO Q.
+  - Visualizar en vivo el acuario mediante cámara USB integrada en el dashboard.
   - Desarrollar un dashboard web hosteado en el propio Arduino UNO Q accesible desde cualquier dispositivo en la misma red.
   - Generar alertas automáticas cuando algún parámetro salga del rango ideal para las especies registradas.
   - Permitir al usuario registrar las especies de peces de su acuario y consultar su compatibilidad y parámetros ideales.
@@ -43,7 +43,7 @@ El dashboard web incluye una base de datos de especies de peces con parámetros 
 
 **Dentro del alcance:**
 - Monitoreo en tiempo real de temperatura y pH
-- Tracking de movimiento de peces con detección de comportamiento anómalo
+- Visualización en vivo del acuario mediante cámara USB
 - Dashboard web local con historial de datos y gráficos en tiempo real
 - Base de datos de 32 especies de peces con parámetros ideales y compatibilidad entre pares
 - Alertas cuando los parámetros salen del rango óptimo para las especies del acuario
@@ -70,10 +70,7 @@ El dashboard web incluye una base de datos de especies de peces con parámetros 
   - Webcam USB — tracking de movimiento de peces (V4L2)
 
 - **Software y librerías:**
-  - Flask — servidor web
-  - Socket.IO — comunicación en tiempo real entre servidor y dashboard
-  - OpenCV — captura de video y detección de movimiento
-  - YOLOv8 (Ultralytics) — detección e identificación de especies *(en desarrollo)*
+  - Arduino WebUI — servidor web y comunicación en tiempo real integrados en el UNO Q
   - pyserial — comunicación serial STM32 → Python
   - OneWire + DallasTemperature — lectura del DS18B20
   - Chart.js — gráficos de historial de temperatura y pH
@@ -108,7 +105,7 @@ Aquasens3/
 1. Clonar el repositorio
 2. Instalar dependencias:
    ```bash
-   pip install flask flask-socketio
+   pip install pyserial
    ```
 3. Ejecutar el servidor local:
    ```bash
@@ -126,7 +123,7 @@ Aquasens3/
 
 ![Diagrama de Conexiones](./assets/diagrama_conexiones.png)
 
-*El STM32U585 lee los sensores de temperatura y pH y los envía al Qualcomm via comunicación interna. El Qualcomm corre Python con OpenCV para el tracking de la cámara y Flask para el dashboard web.*
+*El STM32U585 lee los sensores de temperatura y pH y los envía al Qualcomm via comunicación interna. El Qualcomm corre Python y sirve el dashboard web mediante Arduino WebUI, accesible desde cualquier dispositivo en la red local.*
 
 ---
 
@@ -139,9 +136,9 @@ Aquasens3/
 ## 📚 Bibliografía
 
 - [Arduino UNO Q — Documentación oficial](https://docs.arduino.cc/hardware/uno-q/)
-- [Flask — Documentación oficial](https://flask.palletsprojects.com/)
-- [OpenCV — Documentación oficial](https://docs.opencv.org/)
-- [YOLOv8 (Ultralytics)](https://docs.ultralytics.com/)
+- [Arduino WebUI — Documentación oficial](https://docs.arduino.cc/arduino-cloud/features/webui/)
+- [OneWire + DallasTemperature — Librería Arduino](https://github.com/milesburton/Arduino-Temperature-Control-Library)
+- [Chart.js — Documentación oficial](https://www.chartjs.org/docs/)
 
 ---
 
