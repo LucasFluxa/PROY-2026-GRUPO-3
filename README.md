@@ -122,7 +122,7 @@ Aquasens3/
 ## 📚 Bibliografía
 
 - [Arduino UNO Q — Documentación oficial](https://docs.arduino.cc/hardware/uno-q/)
-- [Arduino WebUI — Documentación oficial](https://docs.arduino.cc/arduino-cloud/features/webui/)
+- [Arduino WebUI — Documentación oficial](https://github.com/arduino/app-bricks-py/tree/main/src/arduino/app_bricks/web_ui)
 - [OneWire + DallasTemperature — Librería Arduino](https://github.com/milesburton/Arduino-Temperature-Control-Library)
 - [Chart.js — Documentación oficial](https://www.chartjs.org/docs/)
 
