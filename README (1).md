@@ -1,7 +1,7 @@
 # PROY-2026-GRUPO-3
 
 <p align="center">
-  <img src="./logo.png" alt="AquaSense Logo" width="320"/>
+  <img src="./full_logo.png" alt="AquaSense Logo" width="320"/>
 </p>
 
 Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* – 2026.
@@ -47,7 +47,6 @@ El dashboard web incluye una base de datos de especies de peces con parámetros 
 - Dashboard web local con historial de datos y gráficos en tiempo real
 - Base de datos de 32 especies de peces con parámetros ideales y compatibilidad entre pares
 - Alertas cuando los parámetros salen del rango óptimo para las especies del acuario
-- Simulador de sensores para pruebas locales sin hardware
 
 **Fuera del alcance:**
 - Control automatizado de equipos del acuario (calefactor, filtro, etc.)
@@ -57,7 +56,7 @@ El dashboard web incluye una base de datos de especies de peces con parámetros 
 ## 🛠️ Tecnologías y herramientas utilizadas
 
 - **Lenguaje(s) de programación:**
-  - Python (dashboard web y servidor local)
+  - Python (servidor del dashboard)
   - C++ / Arduino Sketch (control en tiempo real del STM32U585)
   - JavaScript / HTML / CSS (interfaz web del dashboard)
 
@@ -91,7 +90,6 @@ Aquasens3/
 │   └── main.py             # Servidor principal (Arduino UNO Q)
 ├── sketch/
 │   └── sketch.ino          # Firmware STM32U585
-├── serve_local.py          # Servidor de desarrollo local (PC)
 ├── logo.png                # Logo del proyecto
 └── README.md
 ```
@@ -99,19 +97,6 @@ Aquasens3/
 ---
 
 ## 🚀 Instrucciones de Instalación y Uso
-
-### Desarrollo local (sin Arduino)
-
-1. Clonar el repositorio
-2. Instalar dependencias:
-   ```bash
-   pip install pyserial
-   ```
-3. Ejecutar el servidor local:
-   ```bash
-   python serve_local.py
-   ```
-4. Abrir el navegador en `http://localhost:8080`
 
 ### Despliegue en Arduino UNO Q
 
@@ -147,4 +132,3 @@ Aquasens3/
 > - El sensor de pH requiere calibración inicial con soluciones buffer pH 4.0 y pH 7.0, y recalibración periódica.
 > - La cámara USB se conecta al puerto USB-C del UNO Q mediante un USB-C HUB.
 > - El sensor de turbidez TSD-10 fue descartado del alcance actual del proyecto.
-> - El servidor local (`serve_local.py`) incluye un simulador de sensores accesible desde el dashboard para pruebas sin hardware.
