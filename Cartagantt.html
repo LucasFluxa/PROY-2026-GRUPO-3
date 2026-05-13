@@ -364,7 +364,7 @@ body {
 </div>
 
 <div class="gantt-footer">
-  <span class="footer-note">Generado: 13/04/2026 · Proyecto AquaSense · IWG-400 Proyecto Inicial</span>
+  <span class="footer-note">Generado: 12/05/2026 · Proyecto AquaSense · IWG-400 Proyecto Inicial</span>
   <span class="footer-note">USM Valparaíso 2026</span>
 </div>
 
@@ -384,43 +384,42 @@ const tasks = [
   // ─── FASE HARDWARE ─────────────────────────────────────────────────────────
   { section: "FASE DESARROLLO — HARDWARE" },
 
-  // Componentes → grupo padre con sub-tareas
   { id:5,  task:"Selección y adquisición de componentes", owner:"Daniel Guerra", status:"done", weeks:[0,0,0,1, 1,0,0,0, 0,0,0,0, 0,0,0,0], isParent:true },
-  { id:"5a", task:"Sensor de temperatura DS18B20",        owner:"Daniel Guerra", status:"done", weeks:[0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"5a", task:"Sensor de temperatura DS18B20",             owner:"Daniel Guerra", status:"done", weeks:[0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
   { id:"5b", task:"Sensor de pH (electrodo + módulo ADS1115)", owner:"Daniel Guerra", status:"done", weeks:[0,0,0,1, 1,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"5c", task:"Microcontrolador Arduino UNO Q",        owner:"Daniel Guerra", status:"done", weeks:[0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"5c", task:"Microcontrolador Arduino UNO Q",             owner:"Daniel Guerra", status:"done", weeks:[0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
 
-  { id:6,  task:"Diagrama de circuito",          owner:"Bruno Olguín",    status:"progress", weeks:[0,0,0,0, 1,1,1,0, 0,0,0,0, 0,0,0,0] },
+  { id:6,  task:"Diagrama de circuito",          owner:"Bruno Olguín",    status:"done",     weeks:[0,0,0,0, 1,1,1,0, 0,0,0,0, 0,0,0,0] },
 
-  // Programar sensores → grupo padre con sub-tareas
-  { id:7,  task:"Programar los sensores (Arduino UNO Q)", owner:"Fluxá & Guerra",  status:"progress", weeks:[0,0,0,0, 1,1,1,1, 0,0,0,0, 0,0,0,0], isParent:true },
-  { id:"7a", task:"Lectura de temperatura (DS18B20 + protocolo 1-Wire)", owner:"Lucas Fluxá",  status:"progress", weeks:[0,0,0,0, 1,1,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"7b", task:"Lectura de pH (ADC ADS1115 + conversión mV→pH)",      owner:"Daniel Guerra", status:"progress", weeks:[0,0,0,0, 0,1,1,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"7c", task:"Transmisión de datos vía WiFi / MQTT",                 owner:"Lucas Fluxá",  status:"progress", weeks:[0,0,0,0, 0,0,1,1, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:7,  task:"Programar los sensores (Arduino UNO Q)", owner:"Fluxá & Guerra", status:"progress", weeks:[0,0,0,0, 1,1,1,1, 1,0,0,0, 0,0,0,0], isParent:true },
+  { id:"7a", task:"Lectura de temperatura (DS18B20 + protocolo 1-Wire)", owner:"Lucas Fluxá",   status:"done",     weeks:[0,0,0,0, 1,1,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"7b", task:"Lectura de pH (ADC ADS1115 + conversión mV→pH)",      owner:"Daniel Guerra", status:"done",     weeks:[0,0,0,0, 0,1,1,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"7c", task:"Transmisión de datos al Qualcomm (comunicación interna)", owner:"Lucas Fluxá", status:"progress", weeks:[0,0,0,0, 0,0,1,1, 1,0,0,0, 0,0,0,0], isSubtask:true },
 
   // ─── FASE SOFTWARE ─────────────────────────────────────────────────────────
-  { section: "FASE DESARROLLO — APLICACIÓN MÓVIL / WEB" },
+  { section: "FASE DESARROLLO — DASHBOARD WEB" },
 
-  // Desarrollo de aplicación → grupo padre con sub-tareas detalladas
-  { id:8,  task:"Desarrollo de aplicación",       owner:"Fluxá & Vargas", status:"progress", weeks:[0,0,0,0, 1,1,1,1, 1,1,0,0, 0,0,0,0], isParent:true },
-  { id:"8a", task:"Diseño de pantallas (wireframes + UI kit)",            owner:"Domingo Vargas", status:"progress", weeks:[0,0,0,0, 1,1,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"8b", task:"Configuración del proyecto (React Native / Flutter)",  owner:"Lucas Fluxá",    status:"progress", weeks:[0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"8c", task:"Módulo de conexión WiFi / Bluetooth con Arduino UNO Q",        owner:"Lucas Fluxá",    status:"progress", weeks:[0,0,0,0, 0,1,1,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"8d", task:"Visualización en tiempo real (temperatura y pH)",      owner:"Domingo Vargas", status:"progress", weeks:[0,0,0,0, 0,0,1,1, 0,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"8e", task:"Historial de datos y gráficos (base de datos local)",  owner:"Bruno Olguín",   status:"progress", weeks:[0,0,0,0, 0,0,0,1, 1,0,0,0, 0,0,0,0], isSubtask:true },
-  { id:"8f", task:"Sistema de alertas y notificaciones push",             owner:"Bruno Olguín",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 1,1,0,0, 0,0,0,0], isSubtask:true },
+  { id:8,  task:"Desarrollo del dashboard web",  owner:"Fluxá & Vargas",  status:"progress", weeks:[0,0,0,0, 1,1,1,1, 1,1,0,0, 0,0,0,0], isParent:true },
+  { id:"8a", task:"Diseño de interfaz y estilos (HTML/CSS)",              owner:"Domingo Vargas", status:"done",     weeks:[0,0,0,0, 1,1,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8b", task:"Base de datos de especies (fish_database.json)",       owner:"Domingo Vargas", status:"done",     weeks:[0,0,0,0, 1,1,0,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8c", task:"Compatibilidad entre especies (update_fish.json)",     owner:"Lucas Fluxá",    status:"done",     weeks:[0,0,0,0, 0,1,1,0, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8d", task:"Visualización en tiempo real (temperatura y pH)",      owner:"Lucas Fluxá",    status:"done",     weeks:[0,0,0,0, 0,0,1,1, 0,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8e", task:"Historial de datos y gráficos (Chart.js)",             owner:"Bruno Olguín",   status:"progress", weeks:[0,0,0,0, 0,0,0,1, 1,0,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8f", task:"Sistema de alertas por especie",                        owner:"Bruno Olguín",   status:"progress", weeks:[0,0,0,0, 0,0,0,0, 1,1,0,0, 0,0,0,0], isSubtask:true },
+  { id:"8g", task:"Integración con Arduino WebUI",                         owner:"Lucas Fluxá",    status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 1,1,0,0, 0,0,0,0], isSubtask:true },
 
   // ─── FASE INTEGRACIÓN ──────────────────────────────────────────────────────
   { section: "FASE INTEGRACIÓN — MONTAJE & PRUEBAS" },
-  { id:9,  task:"Montaje y cableado",            owner:"Olguín & Vargas", status:"pending",  weeks:[0,0,0,0, 0,0,0,1, 1,1,0,0, 0,0,0,0] },
-  { id:10, task:"Calibración de sensores",        owner:"Fluxá & Guerra",  status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 1,1,1,0, 0,0,0,0] },
-  { id:11, task:"Poner a prueba el proyecto",     owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,1,1,1, 0,0,0,0] },
+  { id:9,  task:"Montaje y cableado",             owner:"Olguín & Vargas", status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 1,1,0,0, 0,0,0,0] },
+  { id:10, task:"Subida del firmware al Arduino UNO Q", owner:"Fluxá & Guerra", status:"pending", weeks:[0,0,0,0, 0,0,0,0, 0,1,1,0, 0,0,0,0] },
+  { id:11, task:"Calibración de sensores",         owner:"Fluxá & Guerra",  status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,1,1,0, 0,0,0,0] },
+  { id:12, task:"Pruebas integradas del sistema",  owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,1,1, 0,0,0,0] },
 
   // ─── FASE CIERRE ───────────────────────────────────────────────────────────
   { section: "FASE CIERRE — ENTREGA" },
-  { id:12, task:"Corrección de fallas",           owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,1,1, 1,0,0,0] },
-  { id:13, task:"Pruebas finales",                owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,0,0] },
-  { id:14, task:"Entrega del proyecto",           owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1] },
+  { id:13, task:"Corrección de fallas",            owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,0,1, 1,0,0,0] },
+  { id:14, task:"Pruebas finales",                 owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,0,0] },
+  { id:15, task:"Entrega del proyecto",            owner:"Todo el grupo",   status:"pending",  weeks:[0,0,0,0, 0,0,0,0, 0,0,0,0, 0,1,0,0] },
 ];
 
 const statusLabel = { done:"Completado", progress:"En curso", pending:"Sin comenzar" };
