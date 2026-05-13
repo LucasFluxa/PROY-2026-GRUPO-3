@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AquaSense · Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+      --text-xs: clamp(.72rem, .7rem + .15vw, .82rem);
+      --text-sm: clamp(.82rem, .8rem + .2vw, .95rem);
+      --text-base: clamp(.95rem, .93rem + .12vw, 1.05rem);
+      --text-lg: clamp(1.05rem, 1rem + .25vw, 1.2rem);
+
+      --space-1: .25rem;
+      --space-2: .5rem;
+      --space-3: .65rem;
+      --space-4: .85rem;
+      --space-5: 1rem;
+      --space-6: 1.25rem;
+
+      --radius-sm: .45rem;
+      --radius-md: .65rem;
+      --radius-lg: .85rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+      --shadow-md: 0 8px 22px rgba(0,0,0,.32);
+
+      --ease: cubic-bezier(.16, 1, .3, 1);
+      --transition: 160ms var(--ease);
+
+      --content: 1200px;
+
+      --bg: #070A12;
+      --bg2: #0B1020;
+      --surface: rgba(255,255,255,.06);
+      --surface2: rgba(255,255,255,.09);
+      --surface3: rgba(255,255,255,.13);
+      --border: rgba(255,255,255,.12);
+      --divider: rgba(255,255,255,.08);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --faint: rgba(255,255,255,.45);
+
+      --brand: #2ea9a1;
+      --brand2: #58a6ff;
+      --ok: #3ad07b;
+      --warn: #ffb020;
+      --bad: #ff5a6b;
+
+      --select-bg: rgba(18, 24, 38, .92);
+      --select-fg: rgba(255,255,255,.95);
+      --option-bg: #121a2a;
+      --option-fg: rgba(255,255,255,.95);
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f7ff;
+      --bg2: #e8eeff;
+      --surface: rgba(255,255,255,.82);
+      --surface2: rgba(255,255,255,.94);
+      --surface3: #fff;
+      --border: rgba(16, 24, 40, .14);
+      --divider: rgba(16, 24, 40, .09);
+      --text: rgba(16, 24, 40, .92);
+      --muted: rgba(16, 24, 40, .62);
+      --faint: rgba(16, 24, 40, .42);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.08);
+      --shadow-md: 0 10px 26px rgba(0,0,0,.10);
+
+      --select-bg: #ffffff;
+      --select-fg: rgba(16, 24, 40, .92);
+      --option-bg: #ffffff;
+      --option-fg: rgba(16, 24, 40, .92);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      max-height: 100dvh;
+      overflow: hidden;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--text);
+      background:
+        radial-gradient(900px 520px at 18% -8%, rgba(46,169,161,.18), transparent 58%),
+        radial-gradient(800px 480px at 92% 8%, rgba(88,166,255,.14), transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      line-height: 1.45;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; border: 0; background: transparent; cursor: pointer; }
+    input, select, textarea { font: inherit; }
+    :focus-visible { outline: 2px solid var(--brand2); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+    .container { max-width: var(--content); margin: 0 auto; padding: 0 var(--space-4); }
+    @media (min-width: 768px) { .container { padding: 0 var(--space-6); } }
+
+    /* —— Dashboard header —— */
+    .dashHeader {
+      flex: 0 0 auto;
+      z-index: 50;
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in oklab, var(--bg) 78%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .dashHeaderGrid {
+      display: grid;
+      grid-template-columns: minmax(140px, auto) 1fr auto;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      min-height: 52px;
+    }
+    @media (max-width: 900px) {
+      .dashHeaderGrid {
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+      }
+      .dashNav {
+        grid-column: 1 / -1;
+        order: 3;
+      }
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-width: 0;
+    }
+    .brandName {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: var(--text-lg);
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      white-space: nowrap;
+    }
+    .dashNav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+    }
+    @media (max-width: 900px) {
+      .dashNav {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 2px;
+      }
+    }
+    .dashTab {
+      padding: .45rem .75rem;
+      border-radius: var(--radius-full);
+      border: 1px solid transparent;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+    .dashTab:hover { color: var(--text); background: color-mix(in oklab, var(--surface2) 55%, transparent); }
+    .dashTab.active {
+      color: var(--text);
+      border-color: color-mix(in oklab, var(--brand2) 35%, var(--border));
+      background: color-mix(in oklab, var(--surface2) 70%, transparent);
+    }
+    .headerActions { display: flex; align-items: center; gap: var(--space-3); justify-self: end; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: .28rem .55rem;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      user-select: none;
+    }
+    .dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 20%, transparent); }
+    .badge.ok { color: var(--ok); background: color-mix(in oklab, var(--ok) 12%, transparent); border-color: color-mix(in oklab, var(--ok) 28%, var(--border)); }
+    .badge.bad { color: var(--bad); background: color-mix(in oklab, var(--bad) 10%, transparent); border-color: color-mix(in oklab, var(--bad) 28%, var(--border)); }
+    .badge.neutral { color: var(--muted); background: color-mix(in oklab, var(--surface2) 50%, transparent); }
+
+    .iconBtn {
+      width: 38px; height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition), background var(--transition);
+    }
+    .iconBtn:hover { transform: translateY(-1px); background: var(--surface2); }
+
+    /* —— Main viewport —— */
+    .dashMain {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .tabPanel {
+      display: none;
+      height: 100%;
+      overflow: auto;
+      padding: var(--space-4) 0 var(--space-5);
+      -webkit-overflow-scrolling: touch;
+    }
+    .tabPanel.active { display: block; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-xl);
+      padding: var(--space-4);
+      box-shadow: var(--shadow-md);
+    }
+    .sectionHead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--divider);
+    }
+    .sectionTitle {
+      margin: 0;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-lg);
+      letter-spacing: -0.02em;
+    }
+    .sectionHint { color: var(--muted); font-size: var(--text-xs); }
+
+    /* Sensores layout */
+    .sensGrid {
+      display: grid;
+      gap: var(--space-4);
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 900px) {
+      .sensGrid { grid-template-columns: 1fr 1.15fr; align-items: start; }
+    }
+    .sensRight {
+      display: grid;
+      gap: var(--space-4);
+      grid-template-rows: auto auto;
+      align-content: start;
+    }
+    .cards3 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+    @media (min-width: 520px) { .cards3 { grid-template-columns: repeat(3, 1fr); } }
+
+    .cards2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+    @media (min-width: 900px) { .cards2 { grid-template-columns: repeat(2, 1fr); } }
+
+    .cameraBelow {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+      align-items: start;
+    }
+    @media (max-width: 700px) {
+      .cameraBelow { grid-template-columns: 1fr; }
+    }
+
+    .aquariumStatusMini {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-4) var(--space-5);
+      min-height: 140px;
+    }
+    .miniPanelHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-3);
+      gap: var(--space-2);
+    }
+    .miniTitle {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--text);
+    }
+    .miniFishList { display: flex; flex-direction: column; gap: var(--space-2); }
+    .miniFishRow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      background: var(--surface2);
+      border-radius: var(--radius-md);
+    }
+    .miniFishName { flex: 1; font-size: var(--text-sm); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .miniFishQty { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; }
+    .miniEmpty { font-size: var(--text-sm); color: var(--faint); margin: 0; padding: var(--space-2) 0; }
+
+    /* Simulator drawer */
+    .simDrawer {
+      position: fixed;
+      top: 0; right: 0;
+      height: 100dvh;
+      width: min(340px, 92vw);
+      background: var(--bg2);
+      border-left: 1px solid var(--border);
+      box-shadow: -8px 0 32px rgba(0,0,0,.4);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-5);
+      gap: var(--space-4);
+      transform: translateX(100%);
+      transition: transform 240ms var(--ease);
+    }
+    .simDrawer.open { transform: translateX(0); }
+    .simDrawerHead { display: flex; align-items: center; justify-content: space-between; }
+    .simDrawerTitle { font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg); }
+    .simGroup { display: flex; flex-direction: column; gap: var(--space-2); }
+    .simLabel { font-size: var(--text-xs); color: var(--muted); font-weight: 600; display: flex; justify-content: space-between; }
+    .simSlider { width: 100%; accent-color: var(--brand); }
+    .simBtnRow { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+    .simPreset { font-size: var(--text-xs); padding: .3rem .65rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; transition: background var(--transition); }
+    .simPreset:hover { background: var(--surface3); }
+    .simOutput { font-size: var(--text-xs); color: var(--ok); min-height: 1.4em; font-weight: 500; }
+    .simApplyBtn { width: 100%; }
+
+    .historyPanel {
+      margin-top: var(--space-4);
+    }
+
+    .historyContent {
+      display: grid;
+      gap: var(--space-4);
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 900px) {
+      .historyContent { grid-template-columns: 1fr 2fr; }
+    }
+
+    .lastUpdateCard {
+      background: color-mix(in oklab, var(--surface2) 55%, transparent);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+
+    .card {
+      background: color-mix(in oklab, var(--surface2) 55%, transparent);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      position: relative;
+      overflow: hidden;
+    }
+    .cardTop { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
+    .cardLabel { color: var(--muted); font-size: var(--text-sm); font-weight: 700; }
+    .valueRow { display: flex; align-items: baseline; gap: .35rem; margin-top: var(--space-3); }
+    .value {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(1.75rem, 3vw, 2.35rem);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .metricCard .value { font-size: clamp(2.15rem, 3.6vw, 2.85rem); }
+    .metricCard.large .value { font-size: clamp(3rem, 5vw, 4rem); }
+    .metricCard .unit { font-size: var(--text-base); }
+    .unit { color: var(--muted); font-weight: 700; font-size: var(--text-sm); }
+    .value.ok { color: var(--ok); }
+    .value.warn { color: var(--warn); }
+    .value.bad { color: var(--bad); }
+    .bar {
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: color-mix(in oklab, var(--surface3) 70%, transparent);
+      border: 1px solid var(--divider);
+      margin-top: var(--space-3);
+      overflow: hidden;
+    }
+    .bar > i { display: block; height: 100%; width: 0%; border-radius: var(--radius-full); background: linear-gradient(90deg, var(--brand), var(--brand2)); transition: width 700ms var(--ease); }
+    .sub { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--faint); display: flex; justify-content: space-between; gap: var(--space-3); }
+
+    .chartWrap { position: relative; }
+    .chartCanvas { width: 100%; height: min(38vh, 280px); min-height: 180px; }
+    @media (min-width: 900px) { .chartCanvas { height: min(42vh, 320px); } }
+
+    .emptyOverlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-lg);
+      pointer-events: none;
+      background: linear-gradient(180deg, color-mix(in oklab, var(--surface2) 35%, transparent), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .emptyOverlay.show { opacity: 1; }
+    .emptyOverlay .msg {
+      text-align: center;
+      max-width: 300px;
+      padding: var(--space-4);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-lg);
+      background: color-mix(in oklab, var(--surface2) 60%, transparent);
+    }
+    .emptyOverlay .msg strong { font-family: var(--font-display); display: block; margin-bottom: var(--space-2); }
+    .emptyOverlay .msg span { color: var(--muted); font-size: var(--text-sm); }
+
+    /* Controls */
+    .controlsRow { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: .3rem; flex: 1; min-width: 160px; }
+    .label { font-size: var(--text-xs); font-weight: 700; color: var(--muted); }
+
+    .input,
+    .select {
+      width: 100%;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: .55rem .65rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      background: var(--select-bg);
+      color: var(--select-fg);
+      box-shadow: inset 0 1px 0 color-mix(in oklab, #fff 6%, transparent);
+    }
+    [data-theme="light"] .input,
+    [data-theme="light"] .select {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.04);
+    }
+    .input:focus, .select:focus {
+      border-color: color-mix(in oklab, var(--brand2) 45%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand2) 18%, transparent);
+    }
+    .select option,
+    .select optgroup {
+      background-color: var(--option-bg);
+      color: var(--option-fg);
+    }
+    .qtyInput { max-width: 96px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      padding: .58rem .85rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      font-weight: 800;
+      font-size: var(--text-xs);
+      transition: transform var(--transition), background var(--transition);
+      white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); background: var(--surface3); }
+    .btn.primary {
+      border-color: color-mix(in oklab, var(--brand2) 40%, var(--border));
+      background: linear-gradient(135deg, color-mix(in oklab, var(--brand) 55%, transparent), color-mix(in oklab, var(--brand2) 60%, transparent));
+      color: #fff;
+    }
+    [data-theme="light"] .btn.primary { color: #fff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* Fish list */
+    .fishList { margin-top: var(--space-4); display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+    @media (min-width: 640px) { .fishList { grid-template-columns: repeat(2, 1fr); } }
+
+    .fishItem {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: var(--space-3);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-lg);
+      background: color-mix(in oklab, var(--surface2) 55%, transparent);
+    }
+    .fishLeft { display: flex; align-items: center; gap: var(--space-3); min-width: 0; flex: 1; }
+    .fishThumb {
+      width: 60px; height: 60px;
+      border-radius: 14px;
+      border: 1px solid var(--divider);
+      background: color-mix(in oklab, var(--surface3) 50%, #0000);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .fishThumb img { width: 100%; height: 100%; object-fit: contain; }
+    .fishThumb svg { width: 34px; height: 34px; opacity: .75; }
+    .fishNames { min-width: 0; }
+    .fishNames strong { display: block; font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fishNames em { display: block; font-size: var(--text-xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .fishRight { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+    .qtyGroup { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface); }
+    .qtyGroup button {
+      width: 30px; height: 30px;
+      display: grid; place-items: center;
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--text);
+      background: color-mix(in oklab, var(--surface2) 60%, transparent);
+    }
+    .qtyGroup button:hover { background: var(--surface3); }
+    .qtyGroup span {
+      min-width: 28px;
+      text-align: center;
+      font-weight: 800;
+      font-size: var(--text-xs);
+      padding: 0 .25rem;
+    }
+    .tinyBtn {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid;
+      place-items: center;
+    }
+    .tinyBtn:hover { background: var(--surface2); }
+
+    .alerts { margin-top: var(--space-4); display: grid; gap: var(--space-3); }
+    .alert {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--divider);
+      padding: var(--space-3);
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      background: color-mix(in oklab, var(--surface2) 50%, transparent);
+    }
+    .alert.ok { border-color: color-mix(in oklab, var(--ok) 30%, var(--divider)); background: color-mix(in oklab, var(--ok) 8%, transparent); }
+    .alert.warn { border-color: color-mix(in oklab, var(--warn) 35%, var(--divider)); background: color-mix(in oklab, var(--warn) 10%, transparent); }
+    .alert.bad { border-color: color-mix(in oklab, var(--bad) 30%, var(--divider)); background: color-mix(in oklab, var(--bad) 8%, transparent); }
+    .alertIcon { width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--divider); display: grid; place-items: center; flex-shrink: 0; font-size: 1rem; }
+    .alertTitle { margin: 0; font-weight: 900; font-size: var(--text-sm); }
+    .alertDesc { margin: .2rem 0 0; color: var(--muted); font-size: var(--text-sm); }
+    .refBanner { align-items: center; }
+
+    /* Camera placeholder */
+    .camViewport {
+      min-height: min(52vh, 420px);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--divider);
+      background: radial-gradient(ellipse at 50% 30%, rgba(40,50,70,.9), #05070e 70%);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .camViewport.small {
+      min-height: 280px;
+      height: min(35vh, 350px);
+    }
+    .camInner { text-align: center; padding: var(--space-6); max-width: 360px; }
+    .camViewport.small .camInner svg { width: 120px; height: 90px; margin: 0 auto var(--space-4); opacity: .55; }
+    .camViewport:not(.small) .camInner svg { margin: 0 auto var(--space-4); opacity: .55; }
+    .camInner svg { margin: 0 auto var(--space-4); opacity: .55; }
+    .camTitle { font-family: var(--font-display); font-weight: 800; font-size: var(--text-lg); color: var(--text); margin: 0; }
+    .camSub { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--faint); }
+
+    /* Table */
+    .tableWrap { overflow: auto; border-radius: var(--radius-xl); border: 1px solid var(--divider); max-height: min(62vh, 560px); }
+    table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-align: left;
+      padding: .65rem .7rem;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      color: var(--muted);
+      border-bottom: 1px solid var(--divider);
+      background: color-mix(in oklab, var(--surface2) 85%, transparent);
+      backdrop-filter: blur(6px);
+    }
+    tbody td { padding: .6rem .7rem; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+    tbody tr:hover td { background: color-mix(in oklab, var(--surface3) 40%, transparent); }
+    tbody tr:last-child td { border-bottom: 0; }
+    .tblThumb {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--divider);
+      background: color-mix(in oklab, var(--surface3) 45%, transparent);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .tblThumb img { width: 100%; height: 100%; object-fit: contain; }
+    .tblThumb svg { width: 22px; height: 22px; opacity: .7; }
+    .rangeBadge {
+      display: inline-flex;
+      padding: .15rem .4rem;
+      border-radius: .45rem;
+      border: 1px solid var(--divider);
+      font-size: var(--text-xs);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .sci { color: var(--muted); font-style: italic; font-size: var(--text-xs); }
+    .tiny { color: var(--faint); font-size: var(--text-xs); }
+    .compat { color: var(--muted); font-size: var(--text-xs); max-width: 280px; }
+
+    .log { display: grid; gap: var(--space-2); }
+    .logItem {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      padding: .55rem .65rem;
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-lg);
+      background: color-mix(in oklab, var(--surface2) 50%, transparent);
+    }
+    .logLeft { display: flex; gap: var(--space-3); min-width: 0; }
+    .logDot { width: 9px; height: 9px; border-radius: var(--radius-full); margin-top: .35rem; background: var(--muted); flex-shrink: 0; }
+    .logDot.ok { background: var(--ok); }
+    .logDot.warn { background: var(--warn); }
+    .logDot.bad { background: var(--bad); }
+    .logMsg strong { display: block; font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logMsg span { display: block; font-size: var(--text-xs); color: var(--muted); margin-top: .1rem; }
+    .logTime { font-size: var(--text-xs); color: var(--faint); white-space: nowrap; }
+
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .85em; }
+  </style>
+</head>
+<body>
+  <header class="dashHeader">
+    <div class="container dashHeaderGrid">
+      <a class="brand" href="#" aria-label="AquaSense inicio">
+        <img src="/logo.png" alt="AquaSense" height="85" style="display:block;" />
+      </a>
+
+      <nav class="dashNav" role="tablist" aria-label="Navegación principal">
+        <button type="button" class="dashTab active" role="tab" aria-selected="true" data-tab="sensores">Inicio</button>
+        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="acuario">Mi Acuario</button>
+        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="db">Lista de peces</button>
+        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="camara">Cámara</button>
+        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="log">Log</button>
+      </nav>
+
+      <div class="headerActions">
+        <div id="connBadge" class="badge neutral" aria-live="polite">
+          <span class="dot"></span>
+          <span id="connText">Sin conexión</span>
+        </div>
+        <button id="simToggle" class="iconBtn" type="button" aria-label="Abrir simulador de sensores" title="Simular sensores">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M18 2v4M22 2l-4 4"/></svg>
+        </button>
+        <button id="themeToggle" class="iconBtn" type="button" aria-label="Cambiar tema">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashMain">
+    <!-- Sensores -->
+    <section id="panel-sensores" class="tabPanel active" role="tabpanel" aria-label="Sensores">
+      <div class="container">
+        <div class="cards2">
+          <div class="card metricCard large">
+            <div class="cardTop">
+              <div class="cardLabel">Temperatura</div>
+              <span id="tempBadge" class="badge neutral">Sin datos</span>
+            </div>
+            <div class="valueRow">
+              <div id="tempValue" class="value">—</div>
+              <div class="unit">°C</div>
+            </div>
+            <div class="bar" aria-hidden="true"><i id="tempBar"></i></div>
+            <div class="sub"><span id="tempMeta">—</span></div>
+          </div>
+          <div class="card metricCard large">
+            <div class="cardTop">
+              <div class="cardLabel">pH</div>
+              <span id="phBadge" class="badge neutral">Sin datos</span>
+            </div>
+            <div class="valueRow">
+              <div id="phValue" class="value">—</div>
+              <div class="unit">pH</div>
+            </div>
+            <div class="bar" aria-hidden="true"><i id="phBar"></i></div>
+            <div class="sub"><span id="phMeta">—</span></div>
+          </div>
+        </div>
+        <div class="cameraBelow">
+          <div class="aquariumStatusMini">
+            <div class="miniPanelHead">
+              <span class="miniTitle">Estado de mi acuario</span>
+              <span id="miniMyCount" class="badge neutral" style="font-size:.72rem;">0 especies</span>
+            </div>
+            <div id="miniMyFishList" class="miniFishList" role="list">
+              <p class="miniEmpty">Sin peces añadidos — ve a <em>Mi Acuario</em></p>
+            </div>
+          </div>
+          <div class="camViewport small" aria-label="Cámara (mini)" aria-live="polite">
+            <div class="camInner">
+              <svg width="56" height="44" viewBox="0 0 72 56" fill="none" aria-hidden="true">
+                <rect x="6" y="14" width="60" height="36" rx="8" stroke="currentColor" stroke-width="2" opacity=".55"/>
+                <circle cx="36" cy="32" r="12" stroke="currentColor" stroke-width="2" opacity=".55"/>
+                <circle cx="36" cy="32" r="6" fill="currentColor" opacity=".25"/>
+                <rect x="52" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" opacity=".45"/>
+              </svg>
+              <p class="camTitle">Cámara sin señal</p>
+              <p class="camSub">Dispositivo USB no detectado · Hub USB-C</p>
+            </div>
+          </div>
+        </div>
+        <div class="historyPanel">
+          <div class="panel">
+            <div class="sectionHead">
+              <h2 class="sectionTitle">Historial y Estado</h2>
+              <div class="sectionHint"><code>sensor_update</code></div>
+            </div>
+            <div class="historyContent">
+              <div class="lastUpdateCard">
+                <div class="cardTop">
+                  <div class="cardLabel">Última actualización</div>
+                  <span id="tsBadge" class="badge neutral">Nunca</span>
+                </div>
+                <div class="valueRow">
+                  <div id="tsValue" class="value" style="font-size:clamp(1.2rem,2.2vw,1.75rem)">—</div>
+                </div>
+                <div class="sub"><span id="tsSub">Esperando telemetría…</span><span id="sourceMeta">—</span></div>
+              </div>
+              <div class="chartWrap">
+                <canvas id="historyChart" class="chartCanvas" aria-label="Gráfico temperatura y pH"></canvas>
+                <div id="chartEmpty" class="emptyOverlay show" aria-hidden="true">
+                  <div class="msg">
+                    <strong>Esperando telemetría…</strong>
+                    <span>Los puntos aparecen con cada evento en tiempo real.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mi Acuario -->
+    <section id="panel-acuario" class="tabPanel" role="tabpanel" aria-label="Mi acuario" hidden>
+      <div class="container">
+        <div class="panel">
+          <div class="sectionHead">
+            <h2 class="sectionTitle">Mi Acuario</h2>
+            <div class="sectionHint"><span id="myCount">0</span> especies</div>
+          </div>
+
+          <div class="controlsRow" role="group" aria-label="Agregar peces">
+            <div class="field" style="flex:1.4;">
+              <div class="label">Buscar</div>
+              <input id="fishSearch" class="input" type="search" placeholder="Nombre u origen…" autocomplete="off" />
+            </div>
+            <div class="field" style="flex:2;">
+              <div class="label">Especie</div>
+              <select id="fishSelect" class="select" aria-label="Seleccionar pez">
+                <option value="">Cargando…</option>
+              </select>
+            </div>
+            <div class="field" style="flex:0 0 auto; min-width:100px;">
+              <div class="label">Ejemplares</div>
+              <input id="fishQty" class="input qtyInput" type="number" min="1" max="99" value="1" inputmode="numeric" aria-label="Cantidad de ejemplares" />
+            </div>
+            <div class="field" style="flex:0 0 auto; min-width:auto;">
+              <div class="label">&nbsp;</div>
+              <div style="display:flex; gap:var(--space-2); flex-wrap:wrap;">
+                <button id="addFishBtn" class="btn" type="button">Agregar</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="myFishEmpty" class="badge neutral" style="margin-top:var(--space-4); display:inline-flex;">
+            <span class="dot"></span>
+            Agrega peces para ver su compatibilidad
+          </div>
+          <div id="myFishList" class="fishList" role="list"></div>
+
+          <div id="compatRefBanner" class="alert warn refBanner" style="display:none; margin-top:var(--space-4);">
+            <div class="alertIcon" aria-hidden="true">⚠</div>
+            <div>
+              <p class="alertTitle">⚠ Verificando con valores de referencia (25°C · pH 7.0) — conecta el Arduino para datos reales</p>
+              <p class="alertDesc">Con telemetría real se usa <code>GET /api/compatibility</code> con temperatura y pH del agua.</p>
+            </div>
+          </div>
+          <div class="alerts" id="alerts" aria-label="Resultado compatibilidad"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista de peces -->
+    <section id="panel-db" class="tabPanel" role="tabpanel" aria-label="Lista de peces" hidden>
+      <div class="container">
+        <div class="panel">
+          <div class="sectionHead">
+            <h2 class="sectionTitle">Lista de peces</h2>
+            <div class="sectionHint"><span id="dbCount">0</span> especies</div>
+          </div>
+          <div class="field" style="max-width:420px; margin-bottom:var(--space-3);">
+            <div class="label">Filtrar</div>
+            <input id="dbSearch" class="input" type="search" placeholder="Nombre, origen, compatibilidad…" autocomplete="off" />
+          </div>
+          <div class="tableWrap" role="region">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:52px;"></th>
+                  <th>Nombre</th>
+                  <th>Nombre científico</th>
+                  <th>Temp ideal</th>
+                  <th>pH ideal</th>
+                  <th>Origen</th>
+                  <th>Compatibilidad</th>
+                </tr>
+              </thead>
+              <tbody id="dbBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cámara -->
+    <section id="panel-camara" class="tabPanel" role="tabpanel" aria-label="Cámara" hidden>
+      <div class="container">
+        <div class="camViewport" aria-live="polite">
+          <div class="camInner">
+            <svg width="72" height="56" viewBox="0 0 72 56" fill="none" aria-hidden="true">
+              <rect x="6" y="14" width="60" height="36" rx="8" stroke="currentColor" stroke-width="2" opacity=".55"/>
+              <circle cx="36" cy="32" r="12" stroke="currentColor" stroke-width="2" opacity=".55"/>
+              <circle cx="36" cy="32" r="6" fill="currentColor" opacity=".25"/>
+              <rect x="52" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" opacity=".45"/>
+            </svg>
+            <p class="camTitle">Cámara sin señal</p>
+            <p class="camSub">Dispositivo USB no detectado · Hub USB-C</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Log -->
+    <section id="panel-log" class="tabPanel" role="tabpanel" aria-label="Log de eventos" hidden>
+      <div class="container">
+        <div class="panel">
+          <div class="sectionHead">
+            <h2 class="sectionTitle">Log de eventos</h2>
+            <div class="sectionHint">Últimos 50</div>
+          </div>
+          <div id="logList" class="log" role="log" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Simulator Drawer -->
+  <div id="simDrawer" class="simDrawer" role="dialog" aria-label="Simular sensores" aria-modal="true">
+    <div class="simDrawerHead">
+      <span class="simDrawerTitle">🔬 Simular sensores</span>
+      <button id="simClose" class="iconBtn" type="button" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="simGroup">
+      <div class="simLabel"><span>Temperatura</span><span id="simTempVal">24.5 °C</span></div>
+      <input id="simTempSlider" class="simSlider" type="range" min="15" max="35" step="0.1" value="24.5" />
+      <div class="simBtnRow">
+        <button class="simPreset" data-preset-temp="18" data-preset-ph="6.5">Agua fría</button>
+        <button class="simPreset" data-preset-temp="25" data-preset-ph="7.0">Tropical</button>
+        <button class="simPreset" data-preset-temp="28" data-preset-ph="7.5">Cálido</button>
+        <button class="simPreset" data-preset-temp="10">10°C</button>
+        <button class="simPreset" data-preset-temp="35">35°C</button>
+      </div>
+    </div>
+
+    <div class="simGroup">
+      <div class="simLabel"><span>pH</span><span id="simPhVal">7.00</span></div>
+      <input id="simPhSlider" class="simSlider" type="range" min="4" max="10" step="0.05" value="7.0" />
+      <div class="simBtnRow">
+        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="4.5">Muy ácido</button>
+        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="6.0">Ácido</button>
+        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="7.0">Neutro</button>
+        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="9.0">Alcalino</button>
+      </div>
+    </div>
+
+    <button id="simApply" class="btn simApplyBtn" type="button">Aplicar valores</button>
+    <button id="simReset" class="btn" type="button" style="background:var(--surface2); color:var(--text); border:1px solid var(--border);">↺ Restaurar simulación automática</button>
+
+    <div id="simOutput" class="simOutput"></div>
+    <p style="font-size:var(--text-xs); color:var(--faint); margin-top:auto;">Los valores se actualizan en el servidor local. El dashboard los leerá en el siguiente polling (~4.5 s).</p>
+  </div>
+
+  <script>
+(function () {
+  const REF_TEMP = 25;
+  const REF_PH = 7.0;
+
+  const FISH_SILHOUETTE_SVG = `
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path fill="currentColor" d="M52 34c-2-6-8-12-18-14 2-4 2-8-1-10-3-3-8-1-12 4-10 2-16 8-18 14-1 4 0 8 2 11-2 3-3 7-2 10 1 4 5 7 10 8h2c3 0 6-1 8-3 4 3 9 4 14 3 6-1 10-5 11-9 1-3 0-7-2-10 2-3 3-7 2-11zm-31-16c2-2 5-3 6-2 1 1 0 3-1 5-3-1-5-2-5-3zm-6 32c-4-1-6-4-7-7 0-2 0-4 1-6 2 4 5 8 9 11-2 1-3 2-3 2zm28-2c-4 1-8 0-11-2 5-2 9-6 12-11 1 2 1 4 1 6-1 3-2 5-2 7z"/>
+</svg>`.trim();
+
+  const UI = {
+    tabs: Array.from(document.querySelectorAll('.dashTab')),
+    panels: {
+      sensores: document.getElementById('panel-sensores'),
+      acuario: document.getElementById('panel-acuario'),
+      db: document.getElementById('panel-db'),
+      camara: document.getElementById('panel-camara'),
+      log: document.getElementById('panel-log'),
+    },
+    connBadge: document.getElementById('connBadge'),
+    connText: document.getElementById('connText'),
+    themeToggle: document.getElementById('themeToggle'),
+
+    tempValue: document.getElementById('tempValue'),
+    phValue: document.getElementById('phValue'),
+    tsValue: document.getElementById('tsValue'),
+    tempBadge: document.getElementById('tempBadge'),
+    phBadge: document.getElementById('phBadge'),
+    tsBadge: document.getElementById('tsBadge'),
+    tempBar: document.getElementById('tempBar'),
+    phBar: document.getElementById('phBar'),
+    tempMeta: document.getElementById('tempMeta'),
+    phMeta: document.getElementById('phMeta'),
+    tsSub: document.getElementById('tsSub'),
+    sourceMeta: document.getElementById('sourceMeta'),
+
+    chartEmpty: document.getElementById('chartEmpty'),
+    logList: document.getElementById('logList'),
+
+    fishSearch: document.getElementById('fishSearch'),
+    fishSelect: document.getElementById('fishSelect'),
+    fishQty: document.getElementById('fishQty'),
+    addFishBtn: document.getElementById('addFishBtn'),
+    myFishList: document.getElementById('myFishList'),
+    myFishEmpty: document.getElementById('myFishEmpty'),
+    myCount: document.getElementById('myCount'),
+    compatRefBanner: document.getElementById('compatRefBanner'),
+    alerts: document.getElementById('alerts'),
+
+    dbSearch: document.getElementById('dbSearch'),
+    dbCount: document.getElementById('dbCount'),
+    dbBody: document.getElementById('dbBody'),
+  };
+
+  const STATE = {
+    fishDB: [],
+    fishPairs: [],  // Cargado desde /api/fish-pairs-compatibility con update_fish.json
+    /** @type {Map<number, number>} id -> quantity */
+    aquarium: new Map(),
+    latest: { temperature: null, ph: null, timestamp: null, status: 'initializing' },
+    chart: null,
+    chartPoints: 0,
+    lastSource: '—',
+    activeTab: 'sensores',
+  };
+
+  const LIMITS = {
+    logMax: 50,
+    chartMaxPoints: 100,
+    temp: { min: 0, max: 40, idealMin: 20, idealMax: 28, warnMin: 18, warnMax: 30 },
+    ph: { min: 0, max: 14, idealMin: 6.5, idealMax: 7.5, warnMin: 5.5, warnMax: 8.5 },
+  };
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function fmtTime(d) {
+    try {
+      return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+      return d.toLocaleTimeString();
+    }
+  }
+
+  function fmtDateTime(tsSeconds) {
+    if (tsSeconds == null) return null;
+    const d = new Date(Number(tsSeconds) * 1000);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function slugifyName(s) {
+    return String(s || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function fishImageCandidates(fish) {
+    const c = [];
+    const common = slugifyName(fish?.common_name);
+    const sci = slugifyName(fish?.scientific_name);
+    if (common) c.push(common);
+    if (sci) c.push(sci);
+
+    // Alias útil para el caso reportado: "betta.png" o "beta.png"
+    if (common === 'betta') c.push('beta');
+    if (common === 'beta') c.push('betta');
+
+    // Último intento: nombre sin _ (algunos usuarios guardan así)
+    if (common && common.includes('_')) c.push(common.replace(/_/g, ''));
+    return Array.from(new Set(c));
+  }
+
+  function fishImageUrlByName(name) {
+    return '/assets/fish_images/' + name + '.png';
+  }
+
+  function appendFishThumb(container, fish, sizeClass) {
+    container.className = sizeClass;
+    container.innerHTML = '';
+    const names = fishImageCandidates(fish);
+    if (!names.length) {
+      container.innerHTML = FISH_SILHOUETTE_SVG;
+      return;
+    }
+
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+
+    let idx = 0;
+    const tryNext = () => {
+      if (idx >= names.length) {
+        img.remove();
+        container.innerHTML = FISH_SILHOUETTE_SVG;
+        return;
+      }
+      img.src = fishImageUrlByName(names[idx++]);
+    };
+
+    img.onerror = tryNext;
+    container.appendChild(img);
+    tryNext();
+  }
+
+  function setBadge(el, tone, text) {
+    el.className = 'badge ' + tone;
+    el.textContent = text;
+  }
+
+  function setConnectionStatus(status) {
+    const badge = UI.connBadge;
+    const text = UI.connText;
+    if (status === 'ok') {
+      badge.className = 'badge ok';
+      text.textContent = 'Conectado';
+      return;
+    }
+    badge.className = 'badge neutral';
+    text.textContent = 'Sin conexión';
+  }
+
+  function addLog(kind, title, detail) {
+    const dotClass = kind === 'ok' ? 'ok' : kind === 'warn' ? 'warn' : kind === 'bad' ? 'bad' : '';
+    const now = new Date();
+    const item = document.createElement('div');
+    item.className = 'logItem';
+    item.innerHTML = `
+      <div class="logLeft">
+        <div class="logDot ${dotClass}"></div>
+        <div class="logMsg">
+          <strong>${esc(title)}</strong>
+          <span>${esc(detail || '')}</span>
+        </div>
+      </div>
+      <div class="logTime">${esc(fmtTime(now))}</div>`;
+    UI.logList.prepend(item);
+    while (UI.logList.children.length > LIMITS.logMax) {
+      UI.logList.removeChild(UI.logList.lastElementChild);
+    }
+  }
+
+  function computeTone(value, cfg, which) {
+    if (value === null || value === undefined) return { tone: 'neutral', label: 'Sin datos' };
+    if (which === 'temp') {
+      if (value < cfg.warnMin) return { tone: 'bad', label: '❄ Temperatura muy baja' };
+      if (value > cfg.warnMax) return { tone: 'bad', label: '🔥 Temperatura muy alta' };
+      if (value < cfg.idealMin) return { tone: 'warn', label: '⚠ Temperatura baja' };
+      if (value > cfg.idealMax) return { tone: 'warn', label: '⚠ Temperatura alta' };
+    } else {
+      if (value < cfg.warnMin) return { tone: 'bad', label: '⚠ pH muy bajo' };
+      if (value > cfg.warnMax) return { tone: 'bad', label: '⚠ pH muy alto' };
+      if (value < cfg.idealMin) return { tone: 'warn', label: '⚠ pH bajo' };
+      if (value > cfg.idealMax) return { tone: 'warn', label: '⚠ pH alto' };
+    }
+    return { tone: 'ok', label: 'Normal ✓' };
+  }
+
+  function setSensorCard(which, value) {
+    const cfg = which === 'temp' ? LIMITS.temp : LIMITS.ph;
+    const valueEl = which === 'temp' ? UI.tempValue : UI.phValue;
+    const badgeEl = which === 'temp' ? UI.tempBadge : UI.phBadge;
+    const barEl = which === 'temp' ? UI.tempBar : UI.phBar;
+    const metaEl = which === 'temp' ? UI.tempMeta : UI.phMeta;
+
+    if (value === null || value === undefined) {
+      valueEl.textContent = '—';
+      valueEl.className = 'value';
+      setBadge(badgeEl, 'neutral', 'Sin datos');
+      barEl.style.width = '0%';
+      metaEl.textContent = '—';
+      return;
+    }
+    const num = Number(value);
+    const pct = Math.max(0, Math.min(100, ((num - cfg.min) / (cfg.max - cfg.min)) * 100));
+    barEl.style.width = pct.toFixed(1) + '%';
+    const t = computeTone(num, cfg, which);
+    valueEl.className = 'value ' + (t.tone === 'neutral' ? '' : t.tone);
+    valueEl.textContent = num.toFixed(1);
+    setBadge(badgeEl, t.tone, t.label);
+    if (which === 'temp') metaEl.textContent = num < cfg.idealMin ? 'Baja' : num > cfg.idealMax ? 'Alta' : 'Ideal';
+    else metaEl.textContent = num < cfg.idealMin ? 'Ácido' : num > cfg.idealMax ? 'Alcalino' : 'Neutro ✓';
+  }
+
+  function setTimestamp(tsSeconds) {
+    const d = fmtDateTime(tsSeconds);
+    if (!d) {
+      UI.tsValue.textContent = '—';
+      setBadge(UI.tsBadge, 'neutral', 'Nunca');
+      UI.tsSub.textContent = 'Esperando telemetría…';
+      return;
+    }
+    UI.tsValue.textContent = fmtTime(d);
+    setBadge(UI.tsBadge, 'neutral', 'Actualizado');
+    UI.tsSub.textContent = d.toLocaleDateString('es-CL', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function ensureChart() {
+    if (STATE.chart) return;
+    const ctx = document.getElementById('historyChart');
+    const muted = () => getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#999';
+    const faint = () => getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() || '#aaa';
+    const grid = () => getComputedStyle(document.documentElement).getPropertyValue('--divider').trim() || 'rgba(255,255,255,.08)';
+
+    STATE.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Temp °C',
+            data: [],
+            borderColor: '#2ea9a1',
+            backgroundColor: 'rgba(46,169,161,.12)',
+            tension: 0.32,
+            pointRadius: 0,
+            borderWidth: 2,
+          },
+          {
+            label: 'pH',
+            data: [],
+            borderColor: '#58a6ff',
+            backgroundColor: 'rgba(88,166,255,.10)',
+            tension: 0.32,
+            pointRadius: 0,
+            borderWidth: 2,
+            yAxisID: 'y1',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: muted, boxWidth: 12, font: { size: 10 } } },
+        },
+        scales: {
+          x: { ticks: { color: faint, maxTicksLimit: 6 }, grid: { color: grid } },
+          y: { position: 'left', ticks: { color: faint }, grid: { color: grid }, suggestedMin: 0, suggestedMax: 40 },
+          y1: { position: 'right', ticks: { color: faint }, grid: { drawOnChartArea: false }, suggestedMin: 0, suggestedMax: 14 },
+        },
+      },
+    });
+  }
+
+  function chartPushPoint(tsSeconds, temperature, ph) {
+    ensureChart();
+    const d = fmtDateTime(tsSeconds) || new Date();
+    const label = fmtTime(d);
+    const labels = STATE.chart.data.labels;
+    const ds0 = STATE.chart.data.datasets[0].data;
+    const ds1 = STATE.chart.data.datasets[1].data;
+    labels.push(label);
+    ds0.push(temperature == null ? null : Number(temperature));
+    ds1.push(ph == null ? null : Number(ph));
+    while (labels.length > LIMITS.chartMaxPoints) {
+      labels.shift();
+      ds0.shift();
+      ds1.shift();
+    }
+    STATE.chart.update('none');
+    STATE.chartPoints = labels.length;
+    UI.chartEmpty.classList.toggle('show', STATE.chartPoints === 0);
+  }
+
+  function applySensors(data, source) {
+    const next = {
+      temperature: data?.temperature ?? null,
+      ph: data?.ph ?? null,
+      timestamp: data?.timestamp ?? null,
+      status: data?.status ?? 'initializing',
+    };
+    STATE.latest = next;
+    STATE.lastSource = source || STATE.lastSource;
+    setConnectionStatus(next.status);
+    setSensorCard('temp', next.temperature);
+    setSensorCard('ph', next.ph);
+    setTimestamp(next.timestamp);
+    UI.sourceMeta.textContent = STATE.lastSource;
+    const d = fmtDateTime(next.timestamp);
+    if (d) {
+      UI.sourceMeta.textContent =
+        (STATE.lastSource || '—') + ' · ' + d.toLocaleString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+  }
+
+  async function fetchJson(url, { timeoutMs = 2500 } = {}) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+      const text = await res.text();
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch {
+        json = null;
+      }
+      return { ok: res.ok, status: res.status, json };
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  async function refreshSensorsViaRest() {
+    const { ok, json } = await fetchJson('/api/sensors', { timeoutMs: 2200 }).catch(() => ({ ok: false, json: null }));
+    if (!ok || !json) {
+      setConnectionStatus('initializing');
+      UI.sourceMeta.textContent = 'REST · sin respuesta';
+      return false;
+    }
+    applySensors(json, 'REST');
+    return true;
+  }
+
+  /** Datos “reales” del Arduino: criterio pedido = temperatura no nula (GET /api/compatibility en servidor sigue exigiendo pH; si falla, hay fallback local). */
+  function hasRealArduinoForApi() {
+    return STATE.latest.temperature !== null && STATE.latest.temperature !== undefined;
+  }
+
+  function addSpeciesIssuesForSelection(selectedIds, outById) {
+    const selected = Array.from(new Set(selectedIds.map(Number)));
+    const selectedSet = new Set(selected);
+    const fishById = new Map(STATE.fishDB.map((f) => [Number(f.id), f]));
+
+    for (const pair of STATE.fishPairs) {
+      if (pair.compatible) continue;
+      const id1 = Number(pair.fish_1_id);
+      const id2 = Number(pair.fish_2_id);
+      if (!selectedSet.has(id1) || !selectedSet.has(id2)) continue;
+
+      const fish1 = fishById.get(id1);
+      const fish2 = fishById.get(id2);
+      const reason = pair.reason || null;
+
+      if (outById.has(id1)) {
+        outById.get(id1)?.push({
+          type: 'species',
+          other_id: id2,
+          other_name: fish2?.common_name || pair.fish_2_name || String(id2),
+          message: reason || `Incompatibilidad con ${fish2?.common_name || 'otra especie'}`,
+        });
+      }
+      if (outById.has(id2)) {
+        outById.get(id2)?.push({
+          type: 'species',
+          other_id: id1,
+          other_name: fish1?.common_name || pair.fish_1_name || String(id1),
+          message: reason || `Incompatibilidad con ${fish1?.common_name || 'otra especie'}`,
+        });
+      }
+    }
+  }
+
+  function localCompatibility(ids, temp, ph) {
+    const results = [];
+    const idSet = new Set(ids);
+    const issuesById = new Map();
+    for (const id of idSet) issuesById.set(Number(id), []);
+
+    for (const fish of STATE.fishDB) {
+      if (!idSet.has(fish.id)) continue;
+      const issues = issuesById.get(Number(fish.id)) || [];
+      if (!(fish.temp_min <= temp && temp <= fish.temp_max)) {
+        issues.push({
+          type: 'temperature',
+          direction: temp < fish.temp_min ? 'low' : 'high',
+          current: temp,
+          ideal_min: fish.temp_min,
+          ideal_max: fish.temp_max,
+        });
+      }
+      if (!(fish.ph_min <= ph && ph <= fish.ph_max)) {
+        issues.push({
+          type: 'ph',
+          direction: ph < fish.ph_min ? 'low' : 'high',
+          current: ph,
+          ideal_min: fish.ph_min,
+          ideal_max: fish.ph_max,
+        });
+      }
+      results.push({
+        id: fish.id,
+        name: fish.common_name,
+        scientific: fish.scientific_name,
+        compatible: issues.length === 0,
+        issues,
+      });
+    }
+
+    // Conflictos entre especies seleccionadas (demo en browser)
+    addSpeciesIssuesForSelection(Array.from(idSet), issuesById);
+    for (const r of results) {
+      r.issues = issuesById.get(Number(r.id)) || [];
+      r.compatible = r.issues.length === 0;
+    }
+
+    return { temperature: temp, ph: ph, fish: results };
+  }
+
+  function renderFishSelect(filtered) {
+    const list = filtered || STATE.fishDB;
+    UI.fishSelect.innerHTML = '<option value="">— Selecciona —</option>';
+    for (const f of list) {
+      const opt = document.createElement('option');
+      opt.value = String(f.id);
+      opt.textContent = `${f.common_name} — ${f.scientific_name}`;
+      UI.fishSelect.appendChild(opt);
+    }
+  }
+
+  function renderDbTable(rows) {
+    UI.dbBody.innerHTML = '';
+    if (!rows.length) {
+      UI.dbBody.innerHTML = '<tr><td colspan="7" class="tiny" style="padding:1rem;">Sin resultados</td></tr>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const f of rows) {
+      const tr = document.createElement('tr');
+
+      const tdImg = document.createElement('td');
+      const thumb = document.createElement('div');
+      appendFishThumb(thumb, f, 'tblThumb');
+      tdImg.appendChild(thumb);
+      tr.appendChild(tdImg);
+
+      const tdName = document.createElement('td');
+      tdName.innerHTML = `<strong>${esc(f.common_name)}</strong>`;
+      tr.appendChild(tdName);
+
+      const tdSci = document.createElement('td');
+      tdSci.innerHTML = `<span class="sci">${esc(f.scientific_name)}</span>`;
+      tr.appendChild(tdSci);
+
+      const tdT = document.createElement('td');
+      tdT.innerHTML = `<span class="rangeBadge">${esc(f.temp_min)}–${esc(f.temp_max)}°C</span>`;
+      tr.appendChild(tdT);
+
+      const tdPh = document.createElement('td');
+      tdPh.innerHTML = `<span class="rangeBadge">${esc(f.ph_min)}–${esc(f.ph_max)}</span>`;
+      tr.appendChild(tdPh);
+
+      const tdOr = document.createElement('td');
+      tdOr.innerHTML = `<span class="tiny">${esc(f.origin)}</span>`;
+      tr.appendChild(tdOr);
+
+      const tdCo = document.createElement('td');
+      tdCo.innerHTML = `<span class="compat">${esc(f.compatibility)}</span>`;
+      tr.appendChild(tdCo);
+
+      frag.appendChild(tr);
+    }
+    UI.dbBody.appendChild(frag);
+  }
+
+  function parseQty() {
+    let n = parseInt(String(UI.fishQty.value), 10);
+    if (!Number.isFinite(n)) n = 1;
+    return Math.min(99, Math.max(1, n));
+  }
+
+  function aquariumSpeciesCount() {
+    return STATE.aquarium.size;
+  }
+
+  function myFishMetaUpdate() {
+    UI.myCount.textContent = String(aquariumSpeciesCount());
+  }
+
+  function renderMyFish(results) {
+    UI.myFishList.innerHTML = '';
+    if (aquariumSpeciesCount() === 0) {
+      UI.myFishEmpty.style.display = 'inline-flex';
+      myFishMetaUpdate();
+      return;
+    }
+    UI.myFishEmpty.style.display = 'none';
+    const frag = document.createDocumentFragment();
+
+    for (const [id, qty] of STATE.aquarium) {
+      const fish = STATE.fishDB.find((x) => Number(x.id) === Number(id));
+      if (!fish) continue;
+      const res = results ? results.find((r) => Number(r.id) === Number(id)) : null;
+
+      const row = document.createElement('div');
+      row.className = 'fishItem';
+      row.setAttribute('role', 'listitem');
+
+      let statusPill = '<span class="badge neutral">Sin verificar</span>';
+      if (res) {
+        statusPill = res.compatible
+          ? '<span class="badge ok">Normal ✓</span>'
+          : '<span class="badge bad">⚠ Incompatible</span>';
+      }
+
+      const thumbWrap = document.createElement('div');
+      appendFishThumb(thumbWrap, fish, 'fishThumb');
+
+      const left = document.createElement('div');
+      left.className = 'fishLeft';
+      left.appendChild(thumbWrap);
+      const names = document.createElement('div');
+      names.className = 'fishNames';
+      names.innerHTML = `
+        <strong title="${esc(fish.common_name)}">${esc(fish.common_name)} × ${esc(qty)}</strong>
+        <em title="${esc(fish.scientific_name)}">${esc(fish.scientific_name)}</em>`;
+      left.appendChild(names);
+
+      const right = document.createElement('div');
+      right.className = 'fishRight';
+      right.innerHTML = `
+        ${statusPill}
+        <div class="qtyGroup" aria-label="Cantidad">
+          <button type="button" data-qty-dec="${id}" aria-label="Menos">−</button>
+          <span>${esc(qty)}</span>
+          <button type="button" data-qty-inc="${id}" aria-label="Más">+</button>
+        </div>
+        <button class="tinyBtn" type="button" data-remove="${id}" aria-label="Quitar ${esc(fish.common_name)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>`;
+
+      row.appendChild(left);
+      row.appendChild(right);
+
+      row.querySelector(`[data-qty-dec="${id}"]`).addEventListener('click', () => {
+        const q = STATE.aquarium.get(id) || 1;
+        if (q <= 1) STATE.aquarium.delete(id);
+        else STATE.aquarium.set(id, q - 1);
+        UI.alerts.innerHTML = '';
+        UI.compatRefBanner.style.display = 'none';
+        renderMyFish(null);
+      });
+      row.querySelector(`[data-qty-inc="${id}"]`).addEventListener('click', () => {
+        const q = STATE.aquarium.get(id) || 1;
+        STATE.aquarium.set(id, Math.min(99, q + 1));
+        UI.alerts.innerHTML = '';
+        UI.compatRefBanner.style.display = 'none';
+        renderMyFish(null);
+      });
+      row.querySelector(`[data-remove="${id}"]`).addEventListener('click', () => {
+        STATE.aquarium.delete(id);
+        UI.alerts.innerHTML = '';
+        UI.compatRefBanner.style.display = 'none';
+        renderMyFish(null);
+      });
+
+      frag.appendChild(row);
+    }
+    UI.myFishList.appendChild(frag);
+    myFishMetaUpdate();
+    renderMiniAquarium(null);
+  }
+
+  function renderAlertsWaiting(message) {
+    UI.alerts.innerHTML = `
+      <div class="alert warn">
+        <div class="alertIcon">⏳</div>
+        <div><p class="alertTitle">Compatibilidad</p><p class="alertDesc">${esc(message)}</p></div>
+      </div>`;
+  }
+
+  function renderAlertsFromCompatibility(payload) {
+    const fish = payload?.fish || [];
+    UI.alerts.innerHTML = '';
+    if (!fish.length) {
+      renderAlertsWaiting('Agrega peces para verificar.');
+      return;
+    }
+    const bad = fish.filter((f) => !f.compatible);
+    if (!bad.length) {
+      UI.alerts.innerHTML = `
+        <div class="alert ok">
+          <div class="alertIcon">✅</div>
+          <div><p class="alertTitle">Todo OK</p><p class="alertDesc">Compatibles con los parámetros usados en esta verificación.</p></div>
+        </div>`;
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const f of bad) {
+      for (const issue of f.issues || []) {
+        const isTemp = issue.type === 'temperature';
+        const isPh = issue.type === 'ph';
+        const isSpecies = issue.type === 'species';
+        const label = isTemp ? 'Temperatura' : isPh ? 'pH' : 'Especies';
+        const unit = isTemp ? '°C' : '';
+        const dir = isTemp
+          ? (issue.direction === 'low' ? 'demasiado baja' : issue.direction === 'high' ? 'demasiado alta' : '')
+          : (issue.direction === 'low' ? 'demasiado bajo' : issue.direction === 'high' ? 'demasiado alto' : '');
+        const el = document.createElement('div');
+        el.className = 'alert bad';
+        el.innerHTML = `
+          <div class="alertIcon">${isTemp ? '🌡️' : isPh ? '🧪' : '🐟'}</div>
+          <div>
+            <p class="alertTitle">${esc(f.name)} — ${esc(label)} ${esc(dir)}</p>
+            <p class="alertDesc">${
+              isSpecies
+                ? esc(issue.message || `Incompatibilidad con ${issue.other_name || 'otra especie'}`)
+                : `Actual: <strong>${esc(issue.current)}${unit}</strong> · Ideal: <strong>${esc(issue.ideal_min)}–${esc(issue.ideal_max)}${unit}</strong>`
+            }</p>
+          </div>`;
+        frag.appendChild(el);
+      }
+    }
+    UI.alerts.appendChild(frag);
+  }
+
+  async function verifyCompatibility() {
+    if (aquariumSpeciesCount() === 0) {
+      UI.compatRefBanner.style.display = 'none';
+      renderAlertsWaiting('Agrega peces para verificar compatibilidad.');
+      return;
+    }
+
+    const ids = Array.from(STATE.aquarium.keys());
+    const idsParam = ids.join(',');
+
+    renderAlertsWaiting('Verificando…');
+
+    // Cargar compatibilidad entre pares desde update_fish.json vía API
+    try {
+      const { ok, json } = await fetchJson('/api/fish-pairs-compatibility?ids=' + encodeURIComponent(idsParam));
+      if (ok && json?.compatibilities) {
+        STATE.fishPairs = json.compatibilities;
+      }
+    } catch { /* usará los pares ya cargados o vacío */ }
+
+    try {
+      if (hasRealArduinoForApi()) {
+        UI.compatRefBanner.style.display = 'none';
+        const res = await fetch('/api/compatibility?ids=' + encodeURIComponent(idsParam), { headers: { Accept: 'application/json' } });
+        const text = await res.text();
+        let json = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch {
+          json = null;
+        }
+        if (res.status === 503 || !res.ok || !json) {
+          UI.compatRefBanner.style.display = '';
+          const fallback = localCompatibility(ids, REF_TEMP, REF_PH);
+          renderMyFish(fallback.fish);
+          renderAlertsFromCompatibility(fallback);
+          renderMiniAquarium(fallback.fish);
+          addLog('warn', 'Compatibilidad', 'API no disponible o sin pH; usando referencia local (25°C · pH 7.0).');
+          return;
+        }
+        renderMyFish(json.fish);
+        renderAlertsFromCompatibility(json);
+        renderMiniAquarium(json.fish);
+        addLog('ok', 'Compatibilidad', 'Verificación vía API completada.');
+      } else {
+        UI.compatRefBanner.style.display = '';
+        const local = localCompatibility(ids, REF_TEMP, REF_PH);
+        renderMyFish(local.fish);
+        renderAlertsFromCompatibility(local);
+        renderMiniAquarium(local.fish);
+        addLog('ok', 'Compatibilidad', `Verificación local (${REF_TEMP}°C · pH ${REF_PH}).`);
+      }
+    } catch {
+      UI.compatRefBanner.style.display = '';
+      const local = localCompatibility(ids, REF_TEMP, REF_PH);
+      renderMyFish(local.fish);
+      renderAlertsFromCompatibility(local);
+      renderMiniAquarium(local.fish);
+      addLog('bad', 'Compatibilidad', 'Error de red; usando referencia local.');
+    } finally {
+      // UI.checkBtn.disabled = false;
+    }
+  }
+
+  async function loadFishDB() {
+    UI.fishSelect.innerHTML = '<option value="">Cargando…</option>';
+    const { ok, json } = await fetchJson('/api/fish', { timeoutMs: 3500 }).catch(() => ({ ok: false, json: null }));
+    if (!ok || !Array.isArray(json)) {
+      addLog('warn', '/api/fish', 'No se pudo cargar la base de peces.');
+      STATE.fishDB = [];
+      renderFishSelect([]);
+      UI.dbCount.textContent = '0';
+      renderDbTable([]);
+      return;
+    }
+    STATE.fishDB = json;
+    UI.dbCount.textContent = String(json.length);
+    renderFishSelect(json);
+    renderDbTable(json);
+  }
+
+  function switchTab(id) {
+    STATE.activeTab = id;
+    UI.tabs.forEach((btn) => {
+      const on = btn.dataset.tab === id;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    Object.entries(UI.panels).forEach(([key, el]) => {
+      const on = key === id;
+      el.classList.toggle('active', on);
+      el.hidden = !on;
+    });
+  }
+
+  function initTabs() {
+    UI.tabs.forEach((btn) => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+    switchTab('sensores');
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const isDark = theme !== 'light';
+    UI.themeToggle.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+    UI.themeToggle.innerHTML = isDark
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+
+    if (STATE.chart) {
+      const muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#999';
+      const faint = getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() || '#aaa';
+      const grid = getComputedStyle(document.documentElement).getPropertyValue('--divider').trim() || 'rgba(0,0,0,.08)';
+      STATE.chart.options.plugins.legend.labels.color = muted;
+      STATE.chart.options.scales.x.ticks.color = faint;
+      STATE.chart.options.scales.y.ticks.color = faint;
+      STATE.chart.options.scales.y1.ticks.color = faint;
+      STATE.chart.options.scales.x.grid.color = grid;
+      STATE.chart.options.scales.y.grid.color = grid;
+      STATE.chart.update('none');
+    }
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem('aquasense_theme');
+    applyTheme(saved === 'light' ? 'light' : 'dark');
+    UI.themeToggle.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'light' ? 'dark' : 'light';
+      localStorage.setItem('aquasense_theme', next);
+      applyTheme(next);
+    });
+  }
+
+  function initFishControls() {
+    UI.addFishBtn.addEventListener('click', () => {
+      const id = Number(UI.fishSelect.value);
+      if (!id) return;
+      const add = parseQty();
+      const prev = STATE.aquarium.get(id) || 0;
+      STATE.aquarium.set(id, Math.min(99, prev + add));
+      UI.fishQty.value = '1';
+      UI.alerts.innerHTML = '';
+      UI.compatRefBanner.style.display = 'none';
+      renderMyFish(null);
+      addLog('ok', 'Mi Acuario', 'Especie actualizada en el acuario.');
+      // Verificar automáticamente la compatibilidad
+      verifyCompatibility();
+    });
+
+    UI.fishQty.addEventListener('change', () => {
+      UI.fishQty.value = String(parseQty());
+    });
+
+    UI.fishSearch.addEventListener('input', () => {
+      const q = UI.fishSearch.value.trim().toLowerCase();
+      if (!q) {
+        renderFishSelect(null);
+        return;
+      }
+      renderFishSelect(
+        STATE.fishDB.filter(
+          (f) =>
+            String(f.common_name || '')
+              .toLowerCase()
+              .includes(q) ||
+            String(f.scientific_name || '')
+              .toLowerCase()
+              .includes(q) ||
+            String(f.origin || '')
+              .toLowerCase()
+              .includes(q)
+        )
+      );
+    });
+
+    UI.dbSearch.addEventListener('input', () => {
+      const q = UI.dbSearch.value.trim().toLowerCase();
+      if (!q) {
+        renderDbTable(STATE.fishDB);
+        return;
+      }
+      renderDbTable(
+        STATE.fishDB.filter(
+          (f) =>
+            String(f.common_name || '')
+              .toLowerCase()
+              .includes(q) ||
+            String(f.scientific_name || '')
+              .toLowerCase()
+              .includes(q) ||
+            String(f.origin || '')
+              .toLowerCase()
+              .includes(q) ||
+            String(f.compatibility || '')
+              .toLowerCase()
+              .includes(q)
+        )
+      );
+    });
+  }
+
+  function initSocket() {
+    let socket = null;
+    try {
+      socket = io();
+    } catch {
+      addLog('warn', 'Socket.IO', 'No se pudo inicializar el cliente.');
+      return;
+    }
+    socket.on('connect', () => {
+      addLog('ok', 'Socket.IO', 'Conectado.');
+      UI.sourceMeta.textContent = 'Socket.IO';
+    });
+    socket.on('disconnect', () => addLog('warn', 'Socket.IO', 'Desconectado.'));
+    socket.on('connect_error', () => addLog('warn', 'Socket.IO', 'Sin conexión al servidor de sockets.'));
+    socket.on('sensor_update', (data) => {
+      applySensors(data || {}, 'Socket.IO');
+      const hasAny = data && (data.temperature !== null || data.ph !== null);
+      if (hasAny) {
+        chartPushPoint(data.timestamp || Date.now() / 1000, data.temperature, data.ph);
+        addLog('ok', 'sensor_update', `Temp ${data.temperature ?? '—'} · pH ${data.ph ?? '—'}`);
+      } else {
+        addLog('warn', 'sensor_update', 'Sin valores útiles.');
+      }
+    });
+  }
+
+  function renderMiniAquarium(results) {
+    const list = document.getElementById('miniMyFishList');
+    const countEl = document.getElementById('miniMyCount');
+    if (!list) return;
+    const count = STATE.aquarium.size;
+    countEl.textContent = count + (count === 1 ? ' especie' : ' especies');
+    countEl.className = 'badge ' + (count > 0 ? 'ok' : 'neutral');
+    list.innerHTML = '';
+    if (count === 0) {
+      list.innerHTML = '<p class="miniEmpty">Sin peces añadidos — ve a <em>Mi Acuario</em></p>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const [id, qty] of STATE.aquarium) {
+      const fish = STATE.fishDB.find((x) => Number(x.id) === Number(id));
+      if (!fish) continue;
+      const res = results ? results.find((r) => Number(r.id) === Number(id)) : null;
+      const row = document.createElement('div');
+      row.className = 'miniFishRow';
+      row.setAttribute('role', 'listitem');
+      let badge = '<span class="badge neutral" style="font-size:.7rem;">Sin verificar</span>';
+      if (res) badge = res.compatible
+        ? '<span class="badge ok" style="font-size:.7rem;">Normal ✓</span>'
+        : '<span class="badge bad" style="font-size:.7rem;">⚠ Incompatible</span>';
+      row.innerHTML = `<span class="miniFishName" title="${esc(fish.common_name)}">${esc(fish.common_name)}</span><span class="miniFishQty">×${esc(qty)}</span>${badge}`;
+      frag.appendChild(row);
+    }
+    list.appendChild(frag);
+  }
+
+  function initSimulator() {
+    const toggle = document.getElementById('simToggle');
+    const drawer = document.getElementById('simDrawer');
+    if (!toggle || !drawer) return;
+
+    const tempSlider = document.getElementById('simTempSlider');
+    const phSlider   = document.getElementById('simPhSlider');
+    const tempValEl  = document.getElementById('simTempVal');
+    const phValEl    = document.getElementById('simPhVal');
+    const output     = document.getElementById('simOutput');
+
+    const update = () => {
+      tempValEl.textContent = parseFloat(tempSlider.value).toFixed(1) + ' °C';
+      phValEl.textContent   = parseFloat(phSlider.value).toFixed(2);
+    };
+    tempSlider.addEventListener('input', update);
+    phSlider.addEventListener('input', update);
+    update();
+
+    toggle.addEventListener('click', () => drawer.classList.toggle('open'));
+    document.getElementById('simClose').addEventListener('click', () => drawer.classList.remove('open'));
+
+    document.getElementById('simApply').addEventListener('click', async () => {
+      const temp = parseFloat(tempSlider.value);
+      const ph   = parseFloat(phSlider.value);
+      output.textContent = 'Aplicando…';
+      try {
+        const res = await fetch('/api/set-sensors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ temp, ph }),
+        });
+        const json = await res.json();
+        output.textContent = json.ok ? `✓ Objetivo: ${temp.toFixed(1)}°C · pH ${ph.toFixed(2)}` : '✗ ' + (json.error || 'Error');
+        output.style.color = json.ok ? 'var(--ok)' : 'var(--bad)';
+      } catch { output.textContent = '✗ Sin respuesta del servidor'; output.style.color = 'var(--bad)'; }
+    });
+
+    document.getElementById('simReset').addEventListener('click', async () => {
+      output.textContent = 'Restaurando…';
+      try {
+        const res = await fetch('/api/reset-sensors', { method: 'POST' });
+        const json = await res.json();
+        output.textContent = json.ok ? '✓ Simulación automática restaurada' : '✗ Error';
+        output.style.color = json.ok ? 'var(--ok)' : 'var(--bad)';
+      } catch { output.textContent = '✗ Sin respuesta'; output.style.color = 'var(--bad)'; }
+    });
+
+    // Presets
+    document.querySelectorAll('[data-preset-temp]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tempSlider.value = btn.dataset.presetTemp;
+        if (btn.dataset.presetPh) phSlider.value = btn.dataset.presetPh;
+        update();
+      });
+    });
+  }
+
+  async function init() {
+    initTheme();
+    initTabs();
+    ensureChart();
+    UI.chartEmpty.classList.add('show');
+
+    addLog('ok', 'Sistema iniciado', 'Dashboard listo.');
+    addLog('warn', 'Sin conexión al sketch', 'Estados vacíos hasta telemetría.');
+    setConnectionStatus('initializing');
+
+    initFishControls();
+    await loadFishDB();
+    renderMyFish(null);
+    renderMiniAquarium(null);
+    UI.compatRefBanner.style.display = 'none';
+    UI.alerts.innerHTML = '';
+
+    await refreshSensorsViaRest();
+    initSocket();
+    initSimulator();
+
+    setInterval(() => refreshSensorsViaRest(), 4500);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+  </script>
+</body>
+</html>
