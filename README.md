@@ -1,4 +1,4 @@
-# AQUASENNSE-GRUPO-3
+# AQUASENSE-GRUPO-3
 
 <p align="center">
   <img src="./full_logo.png" alt="AquaSense Logo" width="320"/>
