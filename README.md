@@ -74,8 +74,8 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 ├── bricks/             # Brick WebUI utilizado para servir la interfaz y APIs
 ├── python/             # Backend Python principal
 ├── sketch/             # Sketch Arduino y configuración de librerías
-├── README.md           # Resumen técnico del proyecto
-└── READMEguia.md       # Guía/documentación del proyecto
+└── README.md           # Resumen técnico del proyecto
+
 ```
 
 ---
