@@ -204,6 +204,7 @@
     }
     .dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 20%, transparent); }
     .badge.ok { color: var(--ok); background: color-mix(in oklab, var(--ok) 12%, transparent); border-color: color-mix(in oklab, var(--ok) 28%, var(--border)); }
+    .badge.warn { color: var(--warn); background: color-mix(in oklab, var(--warn) 12%, transparent); border-color: color-mix(in oklab, var(--warn) 30%, var(--border)); }
     .badge.bad { color: var(--bad); background: color-mix(in oklab, var(--bad) 10%, transparent); border-color: color-mix(in oklab, var(--bad) 28%, var(--border)); }
     .badge.neutral { color: var(--muted); background: color-mix(in oklab, var(--surface2) 50%, transparent); }
 
@@ -289,17 +290,6 @@
     }
     @media (min-width: 900px) { .cards2 { grid-template-columns: repeat(2, 1fr); } }
 
-    .cameraBelow {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: var(--space-4);
-      margin-top: var(--space-4);
-      align-items: start;
-    }
-    @media (max-width: 700px) {
-      .cameraBelow { grid-template-columns: 1fr; }
-    }
-
     .aquariumStatusMini {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -324,13 +314,35 @@
     .miniFishRow {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: var(--space-3);
       padding: var(--space-2) var(--space-3);
       background: var(--surface2);
       border-radius: var(--radius-md);
     }
+    .miniFishThumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--divider);
+      background: color-mix(in oklab, var(--surface3) 45%, transparent);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .miniFishThumb img { width: 100%; height: 100%; object-fit: contain; }
+    .miniFishThumb svg { width: 22px; height: 22px; opacity: .7; }
     .miniFishName { flex: 1; font-size: var(--text-sm); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .miniFishQty { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; }
+    .miniFishRow .badge { margin-left: auto; }
+    @media (max-width: 520px) {
+      .miniFishRow .badge {
+        width: calc(100% - 48px);
+        justify-content: center;
+        margin-left: 48px;
+      }
+    }
     .miniEmpty { font-size: var(--text-sm); color: var(--faint); margin: 0; padding: var(--space-2) 0; }
 
     /* Simulator drawer */
@@ -418,9 +430,9 @@
     .bar > i { display: block; height: 100%; width: 0%; border-radius: var(--radius-full); background: linear-gradient(90deg, var(--brand), var(--brand2)); transition: width 700ms var(--ease); }
     .sub { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--faint); display: flex; justify-content: space-between; gap: var(--space-3); }
 
-    .chartWrap { position: relative; }
-    .chartCanvas { width: 100%; height: min(38vh, 280px); min-height: 180px; }
-    @media (min-width: 900px) { .chartCanvas { height: min(42vh, 320px); } }
+    .chartWrap { position: relative; padding: .15rem .25rem 0; }
+    .chartCanvas { width: 100%; height: min(40vh, 300px); min-height: 220px; }
+    @media (min-width: 900px) { .chartCanvas { height: min(44vh, 340px); } }
 
     .emptyOverlay {
       position: absolute;
@@ -578,7 +590,7 @@
     .alertDesc { margin: .2rem 0 0; color: var(--muted); font-size: var(--text-sm); }
     .refBanner { align-items: center; }
 
-    /* Camera placeholder */
+    /* Camera */
     .camViewport {
       min-height: min(52vh, 420px);
       border-radius: var(--radius-xl);
@@ -588,12 +600,34 @@
       place-items: center;
       color: var(--muted);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      overflow: hidden;
+      position: relative;
     }
     .camViewport.small {
       min-height: 280px;
       height: min(35vh, 350px);
     }
+    .camStream {
+      width: 100%;
+      height: 100%;
+      min-height: inherit;
+      object-fit: cover;
+      display: block;
+      background: #05070e;
+    }
+    .camViewport.small .camStream { height: 100%; }
     .camInner { text-align: center; padding: var(--space-6); max-width: 360px; }
+    .camOverlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: var(--space-6);
+      text-align: center;
+      background: color-mix(in oklab, #05070e 78%, transparent);
+    }
+    .camViewport.offline .camOverlay { display: grid; }
+    .camViewport.offline .camStream { opacity: .14; }
     .camViewport.small .camInner svg { width: 120px; height: 90px; margin: 0 auto var(--space-4); opacity: .55; }
     .camViewport:not(.small) .camInner svg { margin: 0 auto var(--space-4); opacity: .55; }
     .camInner svg { margin: 0 auto var(--space-4); opacity: .55; }
@@ -677,7 +711,7 @@
         <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="acuario">Mi Acuario</button>
         <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="db">Lista de peces</button>
         <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="camara">Cámara</button>
-        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="log">Log</button>
+        <button type="button" class="dashTab" role="tab" aria-selected="false" data-tab="log">Registro</button>
       </nav>
 
       <div class="headerActions">
@@ -685,9 +719,6 @@
           <span class="dot"></span>
           <span id="connText">Sin conexión</span>
         </div>
-        <button id="simToggle" class="iconBtn" type="button" aria-label="Abrir simulador de sensores" title="Simular sensores">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M18 2v4M22 2l-4 4"/></svg>
-        </button>
         <button id="themeToggle" class="iconBtn" type="button" aria-label="Cambiar tema">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -727,34 +758,20 @@
             <div class="sub"><span id="phMeta">—</span></div>
           </div>
         </div>
-        <div class="cameraBelow">
-          <div class="aquariumStatusMini">
-            <div class="miniPanelHead">
-              <span class="miniTitle">Estado de mi acuario</span>
-              <span id="miniMyCount" class="badge neutral" style="font-size:.72rem;">0 especies</span>
-            </div>
-            <div id="miniMyFishList" class="miniFishList" role="list">
-              <p class="miniEmpty">Sin peces añadidos — ve a <em>Mi Acuario</em></p>
-            </div>
+        <div class="aquariumStatusMini" style="margin-top:var(--space-4);">
+          <div class="miniPanelHead">
+            <span class="miniTitle">Estado de mi acuario</span>
+            <span id="miniMyCount" class="badge neutral" style="font-size:.72rem;">0 especies</span>
           </div>
-          <div class="camViewport small" aria-label="Cámara (mini)" aria-live="polite">
-            <div class="camInner">
-              <svg width="56" height="44" viewBox="0 0 72 56" fill="none" aria-hidden="true">
-                <rect x="6" y="14" width="60" height="36" rx="8" stroke="currentColor" stroke-width="2" opacity=".55"/>
-                <circle cx="36" cy="32" r="12" stroke="currentColor" stroke-width="2" opacity=".55"/>
-                <circle cx="36" cy="32" r="6" fill="currentColor" opacity=".25"/>
-                <rect x="52" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" opacity=".45"/>
-              </svg>
-              <p class="camTitle">Cámara sin señal</p>
-              <p class="camSub">Dispositivo USB no detectado · Hub USB-C</p>
-            </div>
+          <div id="miniMyFishList" class="miniFishList" role="list">
+            <p class="miniEmpty">Sin peces añadidos — ve a <em>Mi Acuario</em></p>
           </div>
         </div>
         <div class="historyPanel">
           <div class="panel">
             <div class="sectionHead">
               <h2 class="sectionTitle">Historial y Estado</h2>
-              <div class="sectionHint"><code>sensor_update</code></div>
+              <div class="sectionHint">Lecturas recientes</div>
             </div>
             <div class="historyContent">
               <div class="lastUpdateCard">
@@ -765,7 +782,7 @@
                 <div class="valueRow">
                   <div id="tsValue" class="value" style="font-size:clamp(1.2rem,2.2vw,1.75rem)">—</div>
                 </div>
-                <div class="sub"><span id="tsSub">Esperando telemetría…</span><span id="sourceMeta">—</span></div>
+                <div class="sub"><span id="tsSub">Esperando telemetría…</span><span id="sourceMeta">Sin datos</span></div>
               </div>
               <div class="chartWrap">
                 <canvas id="historyChart" class="chartCanvas" aria-label="Gráfico temperatura y pH"></canvas>
@@ -823,8 +840,8 @@
           <div id="compatRefBanner" class="alert warn refBanner" style="display:none; margin-top:var(--space-4);">
             <div class="alertIcon" aria-hidden="true">⚠</div>
             <div>
-              <p class="alertTitle">⚠ Verificando con valores de referencia (25°C · pH 7.0) — conecta el Arduino para datos reales</p>
-              <p class="alertDesc">Con telemetría real se usa <code>GET /api/compatibility</code> con temperatura y pH del agua.</p>
+              <p class="alertTitle">Esperando telemetría real del Arduino</p>
+              <p class="alertDesc">La compatibilidad se calcula con <code>GET /api/compatibility</code> cuando hay temperatura y pH reales.</p>
             </div>
           </div>
           <div class="alerts" id="alerts" aria-label="Resultado compatibilidad"></div>
@@ -867,16 +884,19 @@
     <!-- Cámara -->
     <section id="panel-camara" class="tabPanel" role="tabpanel" aria-label="Cámara" hidden>
       <div class="container">
-        <div class="camViewport" aria-live="polite">
-          <div class="camInner">
-            <svg width="72" height="56" viewBox="0 0 72 56" fill="none" aria-hidden="true">
-              <rect x="6" y="14" width="60" height="36" rx="8" stroke="currentColor" stroke-width="2" opacity=".55"/>
-              <circle cx="36" cy="32" r="12" stroke="currentColor" stroke-width="2" opacity=".55"/>
-              <circle cx="36" cy="32" r="6" fill="currentColor" opacity=".25"/>
-              <rect x="52" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" opacity=".45"/>
-            </svg>
-            <p class="camTitle">Cámara sin señal</p>
-            <p class="camSub">Dispositivo USB no detectado · Hub USB-C</p>
+        <div id="cameraMain" class="camViewport offline" aria-live="polite">
+          <img id="cameraMainStream" class="camStream" alt="Vista en vivo del acuario" />
+          <div class="camOverlay">
+            <div class="camInner">
+              <svg width="72" height="56" viewBox="0 0 72 56" fill="none" aria-hidden="true">
+                <rect x="6" y="14" width="60" height="36" rx="8" stroke="currentColor" stroke-width="2" opacity=".55"/>
+                <circle cx="36" cy="32" r="12" stroke="currentColor" stroke-width="2" opacity=".55"/>
+                <circle cx="36" cy="32" r="6" fill="currentColor" opacity=".25"/>
+                <rect x="52" y="8" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" opacity=".45"/>
+              </svg>
+              <p class="camTitle">Cámara sin señal</p>
+              <p id="cameraMainStatus" class="camSub">Inicializando cámara USB…</p>
+            </div>
           </div>
         </div>
       </div>
@@ -896,50 +916,8 @@
     </section>
   </main>
 
-  <!-- Simulator Drawer -->
-  <div id="simDrawer" class="simDrawer" role="dialog" aria-label="Simular sensores" aria-modal="true">
-    <div class="simDrawerHead">
-      <span class="simDrawerTitle">🔬 Simular sensores</span>
-      <button id="simClose" class="iconBtn" type="button" aria-label="Cerrar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-
-    <div class="simGroup">
-      <div class="simLabel"><span>Temperatura</span><span id="simTempVal">24.5 °C</span></div>
-      <input id="simTempSlider" class="simSlider" type="range" min="15" max="35" step="0.1" value="24.5" />
-      <div class="simBtnRow">
-        <button class="simPreset" data-preset-temp="18" data-preset-ph="6.5">Agua fría</button>
-        <button class="simPreset" data-preset-temp="25" data-preset-ph="7.0">Tropical</button>
-        <button class="simPreset" data-preset-temp="28" data-preset-ph="7.5">Cálido</button>
-        <button class="simPreset" data-preset-temp="10">10°C</button>
-        <button class="simPreset" data-preset-temp="35">35°C</button>
-      </div>
-    </div>
-
-    <div class="simGroup">
-      <div class="simLabel"><span>pH</span><span id="simPhVal">7.00</span></div>
-      <input id="simPhSlider" class="simSlider" type="range" min="4" max="10" step="0.05" value="7.0" />
-      <div class="simBtnRow">
-        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="4.5">Muy ácido</button>
-        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="6.0">Ácido</button>
-        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="7.0">Neutro</button>
-        <button class="simPreset" data-preset-temp="24.5" data-preset-ph="9.0">Alcalino</button>
-      </div>
-    </div>
-
-    <button id="simApply" class="btn simApplyBtn" type="button">Aplicar valores</button>
-    <button id="simReset" class="btn" type="button" style="background:var(--surface2); color:var(--text); border:1px solid var(--border);">↺ Restaurar simulación automática</button>
-
-    <div id="simOutput" class="simOutput"></div>
-    <p style="font-size:var(--text-xs); color:var(--faint); margin-top:auto;">Los valores se actualizan en el servidor local. El dashboard los leerá en el siguiente polling (~4.5 s).</p>
-  </div>
-
   <script>
 (function () {
-  const REF_TEMP = 25;
-  const REF_PH = 7.0;
-
   const FISH_SILHOUETTE_SVG = `
 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path fill="currentColor" d="M52 34c-2-6-8-12-18-14 2-4 2-8-1-10-3-3-8-1-12 4-10 2-16 8-18 14-1 4 0 8 2 11-2 3-3 7-2 10 1 4 5 7 10 8h2c3 0 6-1 8-3 4 3 9 4 14 3 6-1 10-5 11-9 1-3 0-7-2-10 2-3 3-7 2-11zm-31-16c2-2 5-3 6-2 1 1 0 3-1 5-3-1-5-2-5-3zm-6 32c-4-1-6-4-7-7 0-2 0-4 1-6 2 4 5 8 9 11-2 1-3 2-3 2zm28-2c-4 1-8 0-11-2 5-2 9-6 12-11 1 2 1 4 1 6-1 3-2 5-2 7z"/>
@@ -987,11 +965,15 @@
     dbSearch: document.getElementById('dbSearch'),
     dbCount: document.getElementById('dbCount'),
     dbBody: document.getElementById('dbBody'),
+
+    cameraMain: document.getElementById('cameraMain'),
+    cameraMainStream: document.getElementById('cameraMainStream'),
+    cameraMainStatus: document.getElementById('cameraMainStatus'),
+
   };
 
   const STATE = {
     fishDB: [],
-    fishPairs: [],  // Cargado desde /api/fish-pairs-compatibility con update_fish.json
     /** @type {Map<number, number>} id -> quantity */
     aquarium: new Map(),
     latest: { temperature: null, ph: null, timestamp: null, status: 'initializing' },
@@ -999,6 +981,8 @@
     chartPoints: 0,
     lastSource: '—',
     activeTab: 'sensores',
+    latestCompatibilityTs: null,
+    compatibilityTimer: null,
   };
 
   const LIMITS = {
@@ -1045,6 +1029,14 @@
     const c = [];
     const common = slugifyName(fish?.common_name);
     const sci = slugifyName(fish?.scientific_name);
+
+    const aliases = {
+      tetra_neon: ['tetraneon'],
+      espada_swordtail: ['espada'],
+      ancistrus_bushy_nose: ['Ancistrus', 'ancistrus'],
+    };
+
+    if (aliases[common]) c.push(...aliases[common]);
     if (common) c.push(common);
     if (sci) c.push(sci);
 
@@ -1058,7 +1050,7 @@
   }
 
   function fishImageUrlByName(name) {
-    return '/assets/fish_images/' + name + '.png';
+    return '/fish_images/' + name + '.png';
   }
 
   function appendFishThumb(container, fish, sizeClass) {
@@ -1188,6 +1180,7 @@
     const muted = () => getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#999';
     const faint = () => getComputedStyle(document.documentElement).getPropertyValue('--faint').trim() || '#aaa';
     const grid = () => getComputedStyle(document.documentElement).getPropertyValue('--divider').trim() || 'rgba(255,255,255,.08)';
+    const pointRadius = (ctx) => (ctx.chart.data.labels.length > 36 ? 0 : 2.4);
 
     STATE.chart = new Chart(ctx, {
       type: 'line',
@@ -1195,22 +1188,30 @@
         labels: [],
         datasets: [
           {
-            label: 'Temp °C',
+            label: 'Temperatura (°C)',
             data: [],
             borderColor: '#2ea9a1',
-            backgroundColor: 'rgba(46,169,161,.12)',
-            tension: 0.32,
-            pointRadius: 0,
-            borderWidth: 2,
+            backgroundColor: 'rgba(46,169,161,.18)',
+            pointBackgroundColor: '#2ea9a1',
+            pointBorderColor: '#ffffff',
+            tension: 0.28,
+            pointRadius,
+            pointHoverRadius: 5,
+            borderWidth: 2.6,
+            spanGaps: true,
           },
           {
             label: 'pH',
             data: [],
-            borderColor: '#58a6ff',
-            backgroundColor: 'rgba(88,166,255,.10)',
-            tension: 0.32,
-            pointRadius: 0,
-            borderWidth: 2,
+            borderColor: '#f4b860',
+            backgroundColor: 'rgba(244,184,96,.16)',
+            pointBackgroundColor: '#f4b860',
+            pointBorderColor: '#ffffff',
+            tension: 0.28,
+            pointRadius,
+            pointHoverRadius: 5,
+            borderWidth: 2.6,
+            spanGaps: true,
             yAxisID: 'y1',
           },
         ],
@@ -1219,13 +1220,58 @@
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 12, right: 10, bottom: 4, left: 6 } },
         plugins: {
-          legend: { labels: { color: muted, boxWidth: 12, font: { size: 10 } } },
+          legend: {
+            position: 'bottom',
+            align: 'center',
+            labels: {
+              color: muted,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              boxWidth: 8,
+              boxHeight: 8,
+              padding: 18,
+              font: { size: 12, weight: '700' },
+            },
+          },
+          tooltip: {
+            displayColors: true,
+            padding: 10,
+            titleMarginBottom: 8,
+            callbacks: {
+              title: (items) => items.length ? `Hora: ${items[0].label}` : '',
+              label: (ctx) => {
+                if (ctx.parsed.y == null) return `${ctx.dataset.label}: sin dato`;
+                const isTemp = ctx.dataset.yAxisID !== 'y1';
+                const value = Number(ctx.parsed.y).toFixed(isTemp ? 1 : 2);
+                return `${ctx.dataset.label}: ${value}${isTemp ? ' °C' : ''}`;
+              },
+            },
+          },
         },
         scales: {
-          x: { ticks: { color: faint, maxTicksLimit: 6 }, grid: { color: grid } },
-          y: { position: 'left', ticks: { color: faint }, grid: { color: grid }, suggestedMin: 0, suggestedMax: 40 },
-          y1: { position: 'right', ticks: { color: faint }, grid: { drawOnChartArea: false }, suggestedMin: 0, suggestedMax: 14 },
+          x: {
+            ticks: { color: faint, autoSkip: true, maxTicksLimit: 4, maxRotation: 0, minRotation: 0, padding: 8 },
+            grid: { color: grid, drawTicks: false },
+            title: { display: true, text: 'Hora', color: muted, font: { size: 11, weight: '700' } },
+          },
+          y: {
+            position: 'left',
+            ticks: { color: faint, maxTicksLimit: 5, padding: 8, callback: (value) => value + '°C' },
+            grid: { color: grid, drawTicks: false },
+            min: 18,
+            max: 30,
+            title: { display: true, text: 'Temperatura', color: muted, font: { size: 11, weight: '700' } },
+          },
+          y1: {
+            position: 'right',
+            ticks: { color: faint, maxTicksLimit: 5, padding: 8 },
+            grid: { drawOnChartArea: false, drawTicks: false },
+            min: 6,
+            max: 8.5,
+            title: { display: true, text: 'pH', color: muted, font: { size: 11, weight: '700' } },
+          },
         },
       },
     });
@@ -1246,9 +1292,50 @@
       ds0.shift();
       ds1.shift();
     }
+    updateChartScales();
     STATE.chart.update('none');
     STATE.chartPoints = labels.length;
     UI.chartEmpty.classList.toggle('show', STATE.chartPoints === 0);
+  }
+
+  function paddedScale(values, fallbackMin, fallbackMax, minRange, hardMin, hardMax, paddingRatio = 0.24) {
+    const nums = values.map(Number).filter(Number.isFinite);
+    if (!nums.length) return { min: fallbackMin, max: fallbackMax };
+
+    let min = Math.min(...nums);
+    let max = Math.max(...nums);
+    const center = (min + max) / 2;
+    let range = Math.max(max - min, minRange);
+    range *= 1 + paddingRatio;
+
+    min = center - range / 2;
+    max = center + range / 2;
+
+    if (min < hardMin) {
+      max += hardMin - min;
+      min = hardMin;
+    }
+    if (max > hardMax) {
+      min -= max - hardMax;
+      max = hardMax;
+    }
+
+    return {
+      min: Math.max(hardMin, Number(min.toFixed(2))),
+      max: Math.min(hardMax, Number(max.toFixed(2))),
+    };
+  }
+
+  function updateChartScales() {
+    if (!STATE.chart) return;
+
+    const tempScale = paddedScale(STATE.chart.data.datasets[0].data, 18, 30, 4, -5, 45);
+    const phScale = paddedScale(STATE.chart.data.datasets[1].data, 6, 8.5, 1.2, 0, 14, 0.3);
+
+    STATE.chart.options.scales.y.min = tempScale.min;
+    STATE.chart.options.scales.y.max = tempScale.max;
+    STATE.chart.options.scales.y1.min = phScale.min;
+    STATE.chart.options.scales.y1.max = phScale.max;
   }
 
   function applySensors(data, source) {
@@ -1264,12 +1351,12 @@
     setSensorCard('temp', next.temperature);
     setSensorCard('ph', next.ph);
     setTimestamp(next.timestamp);
-    UI.sourceMeta.textContent = STATE.lastSource;
+    UI.sourceMeta.textContent = 'Actualizado';
     const d = fmtDateTime(next.timestamp);
     if (d) {
-      UI.sourceMeta.textContent =
-        (STATE.lastSource || '—') + ' · ' + d.toLocaleString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      UI.sourceMeta.textContent = 'Actualizado ' + d.toLocaleString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
+    scheduleCompatibilityRefresh();
   }
 
   async function fetchJson(url, { timeoutMs = 2500 } = {}) {
@@ -1294,96 +1381,19 @@
     const { ok, json } = await fetchJson('/api/sensors', { timeoutMs: 2200 }).catch(() => ({ ok: false, json: null }));
     if (!ok || !json) {
       setConnectionStatus('initializing');
-      UI.sourceMeta.textContent = 'REST · sin respuesta';
+      UI.sourceMeta.textContent = 'Sin respuesta';
       return false;
     }
     applySensors(json, 'REST');
     return true;
   }
 
-  /** Datos “reales” del Arduino: criterio pedido = temperatura no nula (GET /api/compatibility en servidor sigue exigiendo pH; si falla, hay fallback local). */
+  /** Datos reales del Arduino: se exige temperatura y pH antes de calcular compatibilidad. */
   function hasRealArduinoForApi() {
-    return STATE.latest.temperature !== null && STATE.latest.temperature !== undefined;
-  }
-
-  function addSpeciesIssuesForSelection(selectedIds, outById) {
-    const selected = Array.from(new Set(selectedIds.map(Number)));
-    const selectedSet = new Set(selected);
-    const fishById = new Map(STATE.fishDB.map((f) => [Number(f.id), f]));
-
-    for (const pair of STATE.fishPairs) {
-      if (pair.compatible) continue;
-      const id1 = Number(pair.fish_1_id);
-      const id2 = Number(pair.fish_2_id);
-      if (!selectedSet.has(id1) || !selectedSet.has(id2)) continue;
-
-      const fish1 = fishById.get(id1);
-      const fish2 = fishById.get(id2);
-      const reason = pair.reason || null;
-
-      if (outById.has(id1)) {
-        outById.get(id1)?.push({
-          type: 'species',
-          other_id: id2,
-          other_name: fish2?.common_name || pair.fish_2_name || String(id2),
-          message: reason || `Incompatibilidad con ${fish2?.common_name || 'otra especie'}`,
-        });
-      }
-      if (outById.has(id2)) {
-        outById.get(id2)?.push({
-          type: 'species',
-          other_id: id1,
-          other_name: fish1?.common_name || pair.fish_1_name || String(id1),
-          message: reason || `Incompatibilidad con ${fish1?.common_name || 'otra especie'}`,
-        });
-      }
-    }
-  }
-
-  function localCompatibility(ids, temp, ph) {
-    const results = [];
-    const idSet = new Set(ids);
-    const issuesById = new Map();
-    for (const id of idSet) issuesById.set(Number(id), []);
-
-    for (const fish of STATE.fishDB) {
-      if (!idSet.has(fish.id)) continue;
-      const issues = issuesById.get(Number(fish.id)) || [];
-      if (!(fish.temp_min <= temp && temp <= fish.temp_max)) {
-        issues.push({
-          type: 'temperature',
-          direction: temp < fish.temp_min ? 'low' : 'high',
-          current: temp,
-          ideal_min: fish.temp_min,
-          ideal_max: fish.temp_max,
-        });
-      }
-      if (!(fish.ph_min <= ph && ph <= fish.ph_max)) {
-        issues.push({
-          type: 'ph',
-          direction: ph < fish.ph_min ? 'low' : 'high',
-          current: ph,
-          ideal_min: fish.ph_min,
-          ideal_max: fish.ph_max,
-        });
-      }
-      results.push({
-        id: fish.id,
-        name: fish.common_name,
-        scientific: fish.scientific_name,
-        compatible: issues.length === 0,
-        issues,
-      });
-    }
-
-    // Conflictos entre especies seleccionadas (demo en browser)
-    addSpeciesIssuesForSelection(Array.from(idSet), issuesById);
-    for (const r of results) {
-      r.issues = issuesById.get(Number(r.id)) || [];
-      r.compatible = r.issues.length === 0;
-    }
-
-    return { temperature: temp, ph: ph, fish: results };
+    return STATE.latest.temperature !== null &&
+      STATE.latest.temperature !== undefined &&
+      STATE.latest.ph !== null &&
+      STATE.latest.ph !== undefined;
   }
 
   function renderFishSelect(filtered) {
@@ -1456,6 +1466,20 @@
     UI.myCount.textContent = String(aquariumSpeciesCount());
   }
 
+  function speciesStatusBadge(res, mini) {
+    const style = mini ? ' style="font-size:.7rem;"' : '';
+    if (!res) return `<span class="badge neutral"${style}>Sin verificar</span>`;
+    if (res.compatible) return `<span class="badge ok"${style}>Normal ✓</span>`;
+
+    const issues = res.issues || [];
+    const hasSpeciesIssue = issues.some((issue) => issue.type === 'species');
+    const hasWaterIssue = issues.some((issue) => issue.type === 'temperature' || issue.type === 'ph');
+
+    if (hasSpeciesIssue) return `<span class="badge bad"${style}>⚠ Incompatible</span>`;
+    if (hasWaterIssue) return `<span class="badge warn"${style}>⚠ Fuera del rango recomendado</span>`;
+    return `<span class="badge warn"${style}>⚠ Revisar</span>`;
+  }
+
   function renderMyFish(results) {
     UI.myFishList.innerHTML = '';
     if (aquariumSpeciesCount() === 0) {
@@ -1475,12 +1499,7 @@
       row.className = 'fishItem';
       row.setAttribute('role', 'listitem');
 
-      let statusPill = '<span class="badge neutral">Sin verificar</span>';
-      if (res) {
-        statusPill = res.compatible
-          ? '<span class="badge ok">Normal ✓</span>'
-          : '<span class="badge bad">⚠ Incompatible</span>';
-      }
+      const statusPill = speciesStatusBadge(res, false);
 
       const thumbWrap = document.createElement('div');
       appendFishThumb(thumbWrap, fish, 'fishThumb');
@@ -1560,11 +1579,12 @@
       UI.alerts.innerHTML = `
         <div class="alert ok">
           <div class="alertIcon">✅</div>
-          <div><p class="alertTitle">Todo OK</p><p class="alertDesc">Compatibles con los parámetros usados en esta verificación.</p></div>
+          <div><p class="alertTitle">Todo OK</p><p class="alertDesc">Las especies seleccionadas están dentro de los parámetros usados en esta verificación.</p></div>
         </div>`;
       return;
     }
     const frag = document.createDocumentFragment();
+    const renderedAlerts = new Set();
     for (const f of bad) {
       for (const issue of f.issues || []) {
         const isTemp = issue.type === 'temperature';
@@ -1575,15 +1595,27 @@
         const dir = isTemp
           ? (issue.direction === 'low' ? 'demasiado baja' : issue.direction === 'high' ? 'demasiado alta' : '')
           : (issue.direction === 'low' ? 'demasiado bajo' : issue.direction === 'high' ? 'demasiado alto' : '');
+        const title = `${f.name} — ${label} ${dir}`.trim();
+        const message = isSpecies
+          ? (issue.message || `Incompatible con ${issue.other_name || 'otra especie'}`)
+          : `Actual: ${issue.current}${unit} · Ideal: ${issue.ideal_min}–${issue.ideal_max}${unit}`;
+        const alertKey = [
+          f.id ?? f.name,
+          issue.type || 'unknown',
+          String(message).trim().toLowerCase(),
+        ].join('|');
+        if (renderedAlerts.has(alertKey)) continue;
+        renderedAlerts.add(alertKey);
+
         const el = document.createElement('div');
         el.className = 'alert bad';
         el.innerHTML = `
           <div class="alertIcon">${isTemp ? '🌡️' : isPh ? '🧪' : '🐟'}</div>
           <div>
-            <p class="alertTitle">${esc(f.name)} — ${esc(label)} ${esc(dir)}</p>
+            <p class="alertTitle">${esc(title)}</p>
             <p class="alertDesc">${
               isSpecies
-                ? esc(issue.message || `Incompatibilidad con ${issue.other_name || 'otra especie'}`)
+                ? esc(message)
                 : `Actual: <strong>${esc(issue.current)}${unit}</strong> · Ideal: <strong>${esc(issue.ideal_min)}–${esc(issue.ideal_max)}${unit}</strong>`
             }</p>
           </div>`;
@@ -1593,25 +1625,41 @@
     UI.alerts.appendChild(frag);
   }
 
-  async function verifyCompatibility() {
+  function scheduleCompatibilityRefresh() {
+    if (aquariumSpeciesCount() === 0) return;
+
+    if (!hasRealArduinoForApi()) {
+      clearTimeout(STATE.compatibilityTimer);
+      STATE.latestCompatibilityTs = null;
+      UI.compatRefBanner.style.display = '';
+      renderMyFish(null);
+      renderMiniAquarium(null);
+      renderAlertsWaiting('Esperando temperatura y pH reales del Arduino.');
+      return;
+    }
+
+    const ts = STATE.latest.timestamp ?? `${STATE.latest.temperature}:${STATE.latest.ph}`;
+    if (ts === STATE.latestCompatibilityTs) return;
+
+    clearTimeout(STATE.compatibilityTimer);
+    STATE.compatibilityTimer = setTimeout(() => {
+      verifyCompatibility({ silent: true });
+    }, 350);
+  }
+
+  async function verifyCompatibility(options = {}) {
+    const silent = Boolean(options.silent);
     if (aquariumSpeciesCount() === 0) {
       UI.compatRefBanner.style.display = 'none';
-      renderAlertsWaiting('Agrega peces para verificar compatibilidad.');
+      if (!silent) renderAlertsWaiting('Agrega peces para verificar compatibilidad.');
       return;
     }
 
     const ids = Array.from(STATE.aquarium.keys());
     const idsParam = ids.join(',');
+    const requestTs = STATE.latest.timestamp ?? `${STATE.latest.temperature}:${STATE.latest.ph}`;
 
-    renderAlertsWaiting('Verificando…');
-
-    // Cargar compatibilidad entre pares desde update_fish.json vía API
-    try {
-      const { ok, json } = await fetchJson('/api/fish-pairs-compatibility?ids=' + encodeURIComponent(idsParam));
-      if (ok && json?.compatibilities) {
-        STATE.fishPairs = json.compatibilities;
-      }
-    } catch { /* usará los pares ya cargados o vacío */ }
+    if (!silent) renderAlertsWaiting('Verificando…');
 
     try {
       if (hasRealArduinoForApi()) {
@@ -1626,32 +1674,37 @@
         }
         if (res.status === 503 || !res.ok || !json) {
           UI.compatRefBanner.style.display = '';
-          const fallback = localCompatibility(ids, REF_TEMP, REF_PH);
-          renderMyFish(fallback.fish);
-          renderAlertsFromCompatibility(fallback);
-          renderMiniAquarium(fallback.fish);
-          addLog('warn', 'Compatibilidad', 'API no disponible o sin pH; usando referencia local (25°C · pH 7.0).');
+          renderMyFish(null);
+          renderMiniAquarium(null);
+          if (!silent) {
+            renderAlertsWaiting('Esperando temperatura y pH reales del Arduino.');
+            addLog('warn', 'Compatibilidad', 'API no disponible o sin telemetría real.');
+          }
           return;
         }
+        if (silent && requestTs !== (STATE.latest.timestamp ?? `${STATE.latest.temperature}:${STATE.latest.ph}`)) return;
+        STATE.latestCompatibilityTs = requestTs;
         renderMyFish(json.fish);
         renderAlertsFromCompatibility(json);
         renderMiniAquarium(json.fish);
-        addLog('ok', 'Compatibilidad', 'Verificación vía API completada.');
+        if (!silent) addLog('ok', 'Compatibilidad', 'Verificación vía API completada.');
       } else {
         UI.compatRefBanner.style.display = '';
-        const local = localCompatibility(ids, REF_TEMP, REF_PH);
-        renderMyFish(local.fish);
-        renderAlertsFromCompatibility(local);
-        renderMiniAquarium(local.fish);
-        addLog('ok', 'Compatibilidad', `Verificación local (${REF_TEMP}°C · pH ${REF_PH}).`);
+        renderMyFish(null);
+        renderMiniAquarium(null);
+        if (!silent) {
+          renderAlertsWaiting('Esperando temperatura y pH reales del Arduino.');
+          addLog('warn', 'Compatibilidad', 'Sin telemetría real; no se calcula compatibilidad.');
+        }
       }
     } catch {
       UI.compatRefBanner.style.display = '';
-      const local = localCompatibility(ids, REF_TEMP, REF_PH);
-      renderMyFish(local.fish);
-      renderAlertsFromCompatibility(local);
-      renderMiniAquarium(local.fish);
-      addLog('bad', 'Compatibilidad', 'Error de red; usando referencia local.');
+      renderMyFish(null);
+      renderMiniAquarium(null);
+      if (!silent) {
+        renderAlertsWaiting('Error de red al consultar compatibilidad real.');
+        addLog('bad', 'Compatibilidad', 'Error de red al consultar la API real.');
+      }
     } finally {
       // UI.checkBtn.disabled = false;
     }
@@ -1686,6 +1739,8 @@
       el.classList.toggle('active', on);
       el.hidden = !on;
     });
+    if (id === 'camara') refreshCameraStatus();
+    else updateCameraStreams();
   }
 
   function initTabs() {
@@ -1711,6 +1766,9 @@
       STATE.chart.options.scales.x.ticks.color = faint;
       STATE.chart.options.scales.y.ticks.color = faint;
       STATE.chart.options.scales.y1.ticks.color = faint;
+      STATE.chart.options.scales.x.title.color = muted;
+      STATE.chart.options.scales.y.title.color = muted;
+      STATE.chart.options.scales.y1.title.color = muted;
       STATE.chart.options.scales.x.grid.color = grid;
       STATE.chart.options.scales.y.grid.color = grid;
       STATE.chart.update('none');
@@ -1806,7 +1864,7 @@
     }
     socket.on('connect', () => {
       addLog('ok', 'Socket.IO', 'Conectado.');
-      UI.sourceMeta.textContent = 'Socket.IO';
+      UI.sourceMeta.textContent = 'Conectado';
     });
     socket.on('disconnect', () => addLog('warn', 'Socket.IO', 'Desconectado.'));
     socket.on('connect_error', () => addLog('warn', 'Socket.IO', 'Sin conexión al servidor de sockets.'));
@@ -1815,9 +1873,9 @@
       const hasAny = data && (data.temperature !== null || data.ph !== null);
       if (hasAny) {
         chartPushPoint(data.timestamp || Date.now() / 1000, data.temperature, data.ph);
-        addLog('ok', 'sensor_update', `Temp ${data.temperature ?? '—'} · pH ${data.ph ?? '—'}`);
+        addLog('ok', 'Lectura recibida', `Temp ${data.temperature ?? '—'} · pH ${data.ph ?? '—'}`);
       } else {
-        addLog('warn', 'sensor_update', 'Sin valores útiles.');
+        addLog('warn', 'Lectura recibida', 'Sin valores útiles.');
       }
     });
   }
@@ -1842,72 +1900,46 @@
       const row = document.createElement('div');
       row.className = 'miniFishRow';
       row.setAttribute('role', 'listitem');
-      let badge = '<span class="badge neutral" style="font-size:.7rem;">Sin verificar</span>';
-      if (res) badge = res.compatible
-        ? '<span class="badge ok" style="font-size:.7rem;">Normal ✓</span>'
-        : '<span class="badge bad" style="font-size:.7rem;">⚠ Incompatible</span>';
-      row.innerHTML = `<span class="miniFishName" title="${esc(fish.common_name)}">${esc(fish.common_name)}</span><span class="miniFishQty">×${esc(qty)}</span>${badge}`;
+      const badge = speciesStatusBadge(res, true);
+
+      const thumb = document.createElement('div');
+      appendFishThumb(thumb, fish, 'miniFishThumb');
+
+      row.appendChild(thumb);
+      row.insertAdjacentHTML('beforeend', `<span class="miniFishName" title="${esc(fish.common_name)}">${esc(fish.common_name)}</span><span class="miniFishQty">×${esc(qty)}</span>${badge}`);
       frag.appendChild(row);
     }
     list.appendChild(frag);
   }
 
-  function initSimulator() {
-    const toggle = document.getElementById('simToggle');
-    const drawer = document.getElementById('simDrawer');
-    if (!toggle || !drawer) return;
+  async function refreshCameraStatus() {
+    const { ok, json } = await fetchJson('/api/camera/status', { timeoutMs: 2200 }).catch(() => ({ ok: false, json: null }));
+    const isAvailable = Boolean(ok && json?.available && json?.stream);
+    const message = isAvailable
+      ? `Cámara activa · ${json.source || 'USB'}`
+      : (json?.error || 'Cámara USB no disponible');
 
-    const tempSlider = document.getElementById('simTempSlider');
-    const phSlider   = document.getElementById('simPhSlider');
-    const tempValEl  = document.getElementById('simTempVal');
-    const phValEl    = document.getElementById('simPhVal');
-    const output     = document.getElementById('simOutput');
-
-    const update = () => {
-      tempValEl.textContent = parseFloat(tempSlider.value).toFixed(1) + ' °C';
-      phValEl.textContent   = parseFloat(phSlider.value).toFixed(2);
-    };
-    tempSlider.addEventListener('input', update);
-    phSlider.addEventListener('input', update);
-    update();
-
-    toggle.addEventListener('click', () => drawer.classList.toggle('open'));
-    document.getElementById('simClose').addEventListener('click', () => drawer.classList.remove('open'));
-
-    document.getElementById('simApply').addEventListener('click', async () => {
-      const temp = parseFloat(tempSlider.value);
-      const ph   = parseFloat(phSlider.value);
-      output.textContent = 'Aplicando…';
-      try {
-        const res = await fetch('/api/set-sensors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ temp, ph }),
-        });
-        const json = await res.json();
-        output.textContent = json.ok ? `✓ Objetivo: ${temp.toFixed(1)}°C · pH ${ph.toFixed(2)}` : '✗ ' + (json.error || 'Error');
-        output.style.color = json.ok ? 'var(--ok)' : 'var(--bad)';
-      } catch { output.textContent = '✗ Sin respuesta del servidor'; output.style.color = 'var(--bad)'; }
+    [UI.cameraMain].forEach((el) => {
+      if (!el) return;
+      el.classList.toggle('offline', !isAvailable);
+    });
+    [UI.cameraMainStatus].forEach((el) => {
+      if (el) el.textContent = message;
     });
 
-    document.getElementById('simReset').addEventListener('click', async () => {
-      output.textContent = 'Restaurando…';
-      try {
-        const res = await fetch('/api/reset-sensors', { method: 'POST' });
-        const json = await res.json();
-        output.textContent = json.ok ? '✓ Simulación automática restaurada' : '✗ Error';
-        output.style.color = json.ok ? 'var(--ok)' : 'var(--bad)';
-      } catch { output.textContent = '✗ Sin respuesta'; output.style.color = 'var(--bad)'; }
-    });
+    if (isAvailable) addLog('ok', 'Cámara', message);
+    else addLog('warn', 'Cámara', message);
 
-    // Presets
-    document.querySelectorAll('[data-preset-temp]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tempSlider.value = btn.dataset.presetTemp;
-        if (btn.dataset.presetPh) phSlider.value = btn.dataset.presetPh;
-        update();
-      });
-    });
+    updateCameraStreams();
+  }
+
+  function updateCameraStreams() {
+    const streamUrl = '/api/camera/stream';
+    const cameraActive = !UI.cameraMain?.classList.contains('offline');
+
+    if (UI.cameraMainStream) {
+      UI.cameraMainStream.src = cameraActive && STATE.activeTab === 'camara' ? streamUrl : '';
+    }
   }
 
   async function init() {
@@ -1929,8 +1961,6 @@
 
     await refreshSensorsViaRest();
     initSocket();
-    initSimulator();
-
     setInterval(() => refreshSensorsViaRest(), 4500);
   }
 
