@@ -92,6 +92,10 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* �
 ## 📐 Diseño del Sistema
 ![Diagrama de Conexiones](./assets/diagrama_conexiones.png)
 
+<p align="center">
+  <img src="/assets/diagrama_conexiones.png" alt="Diagrama de conexiones" width="320"/>
+</p>
+
 *El sistema conecta el sensor DS18B20 al pin D2 para medir temperatura y el módulo PH-4502C al pin A2 para medir pH. El sketch de Arduino toma lecturas periódicas y las envía al backend Python mediante Bridge RPC. El backend expone APIs REST y eventos en tiempo real para que el dashboard web muestre el estado del acuario, historial de lecturas, especies seleccionadas, alertas de rango y vista de cámara cuando esté disponible.*
 
 ---
