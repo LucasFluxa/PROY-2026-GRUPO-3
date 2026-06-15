@@ -115,5 +115,5 @@ Repositorio del grupo 3 para el proyecto del ramo *Proyecto Inicial (IWG400)* 鈥
 ---
 
 ## 馃搶 Notas adicionales
-
+- [Video del proyecto](https://www.youtube.com/watch?v=6ViuDSJwthM)
 > El sensor PH-4502C debe calibrarse con sus potenci贸metros antes de usar las alertas de pH como referencia fina. Como el PH-4502C trabaja alimentado a 5V y la entrada anal贸gica del Arduino UNO Q usa 3.3V, la salida `PO` debe pasar por un divisor de tensi贸n antes de llegar a `A2`; en este proyecto se usan tres resistencias de `10 kOhm`: `PO -> 10 kOhm -> A2 -> 10 kOhm -> 10 kOhm -> GND`, con tierra com煤n entre el sensor y la placa. Si el DS18B20 no viene en m贸dulo, se debe agregar una resistencia pull-up de 4.7 kOhm entre DATA y 3V3. El dashboard est谩 pensado para usarse dentro de la misma red local y las alertas de compatibilidad son informativas, no reemplazan una evaluaci贸n especializada del cuidado de cada especie.
